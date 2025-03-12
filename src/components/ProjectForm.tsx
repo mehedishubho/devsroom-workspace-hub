@@ -229,22 +229,35 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       return;
     }
 
-    // Create project data with all required fields
+    // Ensure all required fields are explicitly set with non-optional values
     const projectData: Project = {
       id: initialData?.id || generateId(),
       name: values.name,
       clientName: values.clientName,
-      description: values.description,
+      description: values.description || "",
       url: values.url,
-      credentials: values.credentials,
-      hosting: values.hosting,
+      credentials: {
+        username: values.credentials.username,
+        password: values.credentials.password,
+        notes: values.credentials.notes || "",
+      },
+      hosting: {
+        provider: values.hosting.provider,
+        credentials: {
+          username: values.hosting.credentials.username,
+          password: values.hosting.credentials.password,
+          notes: values.hosting.credentials.notes || "",
+        },
+        url: values.hosting.url || "",
+        notes: values.hosting.notes || "",
+      },
       otherAccess,
       startDate: values.startDate,
       endDate: values.endDate,
       price: values.price,
       payments,
       status: values.status,
-      notes: values.notes,
+      notes: values.notes || "",
       createdAt: initialData?.createdAt || new Date(),
       updatedAt: new Date(),
     };
