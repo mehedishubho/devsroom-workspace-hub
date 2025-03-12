@@ -12,10 +12,10 @@ import { motion } from "framer-motion";
 
 interface PaymentItemProps {
   payment: Payment;
-  index: number;
+  index?: number; // Make index optional
 }
 
-const PaymentItem = ({ payment, index }: PaymentItemProps) => {
+const PaymentItem = ({ payment, index = 0 }: PaymentItemProps) => {
   const { amount, date, description, status } = payment;
 
   return (
