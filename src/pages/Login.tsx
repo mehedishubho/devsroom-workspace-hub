@@ -56,9 +56,9 @@ const Login = () => {
             <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
               <Briefcase className="h-6 w-6 text-primary" />
             </div>
-            <h2 className="mt-6 text-3xl font-bold">Welcome back</h2>
+            <h2 className="mt-6 text-3xl font-bold">Devsroom Workspace</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Log in to access your freelance project dashboard
+              Log in to access your projects dashboard
             </p>
           </div>
           

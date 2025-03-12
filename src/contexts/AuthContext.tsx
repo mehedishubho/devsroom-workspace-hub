@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateUserProfile: (updates: Partial<User>) => void;
 }
 
 interface User {
@@ -26,15 +27,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Check for existing session on load
   useEffect(() => {
-    const storedUser = localStorage.getItem("freelance_user");
+    const storedUser = localStorage.getItem("devsroom_user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
     }
   }, []);
+
+  // Redirect authenticated users if trying to access login page
+  useEffect(() => {
+    if (isAuthenticated && location.pathname === "/login") {
+      navigate("/");
+    }
+  }, [isAuthenticated, location.pathname, navigate]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Simulate API call delay
@@ -45,10 +54,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const user = { email, name: "Admin" };
       setUser(user);
       setIsAuthenticated(true);
-      localStorage.setItem("freelance_user", JSON.stringify(user));
+      localStorage.setItem("devsroom_user", JSON.stringify(user));
       toast({
         title: "Login successful",
-        description: "Welcome back to your freelance dashboard!",
+        description: "Welcome back to your Devsroom Workspace!",
       });
       return true;
     } else {
@@ -64,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem("freelance_user");
+    localStorage.removeItem("devsroom_user");
     toast({
       title: "Logged out",
       description: "You have been logged out successfully",
@@ -72,8 +81,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate("/login");
   };
 
+  const updateUserProfile = (updates: Partial<User>) => {
+    if (!user) return;
+    
+    const updatedUser = { ...user, ...updates };
+    setUser(updatedUser);
+    localStorage.setItem("devsroom_user", JSON.stringify(updatedUser));
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Briefcase, LogOut, User } from "lucide-react";
+import { Briefcase, LogOut, User, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   DropdownMenu,
@@ -46,7 +46,7 @@ const Navbar = () => {
           >
             <Briefcase className="h-6 w-6 text-primary" />
           </motion.div>
-          <span className="font-semibold text-lg">Freelance Hub</span>
+          <span className="font-semibold text-lg">Devsroom Workspace</span>
         </Link>
         
         <div className="flex items-center gap-4">
@@ -70,6 +70,12 @@ const Navbar = () => {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/account" className="cursor-pointer">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Account Settings
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={logout} className="text-destructive cursor-pointer">
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout

@@ -1,94 +1,85 @@
 
-import { Project } from "@/types";
-import { cn } from "@/lib/utils";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, ExternalLink, Clock, DollarSign } from "lucide-react";
-import { format } from "date-fns";
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { format } from "date-fns";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Project } from "@/types";
 
 interface ProjectCardProps {
   project: Project;
-  className?: string;
 }
 
-const ProjectCard = ({ project, className }: ProjectCardProps) => {
-  const { 
-    id, name, clientName, url, startDate, endDate, 
-    price, payments, status 
-  } = project;
-
-  const totalPaid = payments.reduce((sum, payment) => {
-    return payment.status === "completed" ? sum + payment.amount : sum;
-  }, 0);
-
-  const percentPaid = Math.round((totalPaid / price) * 100);
-
-  const getStatusColor = (status: Project["status"]) => {
+const ProjectCard = ({ project }: ProjectCardProps) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
-        return "bg-blue-500/10 text-blue-600 border-blue-200";
-      case "completed":
-        return "bg-green-500/10 text-green-600 border-green-200";
-      case "on-hold":
-        return "bg-amber-500/10 text-amber-600 border-amber-200";
-      case "cancelled":
-        return "bg-red-500/10 text-red-600 border-red-200";
+      case 'active':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
+      case 'on-hold':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
       default:
-        return "bg-gray-500/10 text-gray-600 border-gray-200";
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
     }
   };
 
+  const totalPaid = project.payments
+    .filter(p => p.status === 'completed')
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  
+  const percentPaid = (totalPaid / project.price) * 100;
+
   return (
-    <motion.div
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.2 }}
-    >
-      <Link to={`/project/${id}`} className="block">
-        <Card className={cn(
-          "overflow-hidden border backdrop-blur-sm bg-white/50 dark:bg-black/20 hover:shadow-md transition-all duration-300",
-          className
-        )}>
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="font-medium text-lg line-clamp-1">{name}</h3>
-                <p className="text-muted-foreground text-sm">{clientName}</p>
+    <Link to={`/project/${project.id}`}>
+      <Card className="h-full transition-all hover:shadow-md hover:border-primary/20 bg-white/70 dark:bg-black/20 backdrop-blur-sm">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="space-y-1">
+                <h3 className="font-medium text-lg">{project.name}</h3>
+                <p className="text-sm text-muted-foreground">{project.clientName}</p>
               </div>
-              <Badge className={cn("ml-auto", getStatusColor(status))}>
-                {status.replace("-", " ")}
+              <Badge className={getStatusColor(project.status)}>
+                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
               </Badge>
             </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 pb-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <ExternalLink className="h-4 w-4" />
-              <span className="truncate">{url.replace(/^https?:\/\//, '')}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <span>{format(startDate, "MMM d, yyyy")}</span>
+            
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {project.description || "No description available."}
+            </p>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Price:</span>
+                <span className="font-medium">${project.price.toLocaleString()}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{endDate ? format(endDate, "MMM d, yyyy") : "Ongoing"}</span>
+              
+              <div className="flex justify-between text-sm">
+                <span>Paid:</span>
+                <span className="font-medium">${totalPaid.toLocaleString()} ({percentPaid.toFixed(0)}%)</span>
+              </div>
+              
+              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary rounded-full" 
+                  style={{ width: `${percentPaid}%` }}
+                ></div>
               </div>
             </div>
-          </CardContent>
-          <CardFooter className="p-4 pt-2 border-t flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">${price.toLocaleString()}</span>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {percentPaid}% paid
-            </div>
-          </CardFooter>
-        </Card>
-      </Link>
-    </motion.div>
+          </div>
+        </CardContent>
+        <CardFooter className="px-6 py-4 border-t bg-gray-50/70 dark:bg-black/10">
+          <div className="flex justify-between w-full text-xs text-muted-foreground">
+            <span>Start: {format(new Date(project.startDate), "MMM d, yyyy")}</span>
+            {project.endDate && (
+              <span>End: {format(new Date(project.endDate), "MMM d, yyyy")}</span>
+            )}
+          </div>
+        </CardFooter>
+      </Card>
+    </Link>
   );
 };
 
