@@ -229,11 +229,22 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       return;
     }
 
+    // Create project data with all required fields
     const projectData: Project = {
       id: initialData?.id || generateId(),
-      ...values,
+      name: values.name,
+      clientName: values.clientName,
+      description: values.description,
+      url: values.url,
+      credentials: values.credentials,
+      hosting: values.hosting,
       otherAccess,
+      startDate: values.startDate,
+      endDate: values.endDate,
+      price: values.price,
       payments,
+      status: values.status,
+      notes: values.notes,
       createdAt: initialData?.createdAt || new Date(),
       updatedAt: new Date(),
     };
