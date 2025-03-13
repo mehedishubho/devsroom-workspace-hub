@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -55,12 +54,10 @@ const ClientDetails = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  // Form state
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
-  // Load client and projects
   useEffect(() => {
     if (!clientId) return;
     
@@ -158,10 +155,6 @@ const ClientDetails = () => {
     }
   };
 
-  const handleViewProject = (projectId: string) => {
-    navigate(`/projects/${projectId}`);
-  };
-
   if (isLoading) {
     return (
       <Dashboard>
@@ -257,8 +250,7 @@ const ClientDetails = () => {
                     {projects.map((project) => (
                       <ProjectCard 
                         key={project.id} 
-                        project={project} 
-                        onClick={() => handleViewProject(project.id)}
+                        project={project}
                       />
                     ))}
                   </div>
@@ -279,7 +271,6 @@ const ClientDetails = () => {
           </div>
         </div>
 
-        {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -341,7 +332,6 @@ const ClientDetails = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
