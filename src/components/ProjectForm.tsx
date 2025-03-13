@@ -34,7 +34,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { sampleClients, addClient } from "@/data/clients";
 import { addProject } from "@/data/projects";
-import { Client } from "@/types";
+import { Client, Project } from "@/types";
 import ProjectTypeSelector from "@/components/ui-custom/ProjectTypeSelector";
 
 const formSchema = z.object({
@@ -49,7 +49,14 @@ const formSchema = z.object({
   budget: z.string().optional(),
 });
 
-const ProjectForm = () => {
+// Define the props interface for the ProjectForm component
+interface ProjectFormProps {
+  initialData?: Project;
+  onSubmit?: (project: Project) => void;
+  onCancel?: () => void;
+}
+
+const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = location;
@@ -57,17 +64,19 @@ const ProjectForm = () => {
   const [clients, setClients] = useState<Client[]>(sampleClients);
   const [newClient, setNewClient] = useState("");
   const [showNewClientInput, setShowNewClientInput] = useState(false);
-  const [selectedTypeId, setSelectedTypeId] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [selectedTypeId, setSelectedTypeId] = useState(initialData?.projectTypeId || "");
+  const [selectedCategoryId, setSelectedCategoryId] = useState(initialData?.projectCategoryId || "");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      clientId: state?.clientId || "",
-      description: "",
-      startDate: new Date(),
-      projectStatus: "planning",
+      name: initialData?.name || "",
+      clientId: initialData?.clientId || state?.clientId || "",
+      description: initialData?.description || "",
+      startDate: initialData?.startDate ? new Date(initialData.startDate) : new Date(),
+      deadlineDate: initialData?.endDate ? new Date(initialData.endDate) : undefined,
+      projectStatus: initialData?.status || "planning",
+      budget: initialData?.price ? String(initialData.price) : "",
     },
   });
 
@@ -78,7 +87,7 @@ const ProjectForm = () => {
     }
   }, [state, form]);
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const handleSubmitForm = (values: z.infer<typeof formSchema>) => {
     try {
       // If new client was entered, create it
       let clientId = values.clientId;
@@ -91,25 +100,40 @@ const ProjectForm = () => {
         setClients([...sampleClients]); // Refresh clients list
       }
 
-      const project = addProject({
+      const projectData = {
+        ...(initialData || {}),
         name: values.name,
         clientId,
         clientName: clients.find(c => c.id === clientId)?.name || newClient,
         description: values.description || "",
         startDate: values.startDate,
-        deadlineDate: values.deadlineDate,
+        endDate: values.deadlineDate,
         status: values.projectStatus,
-        budget: values.budget ? parseFloat(values.budget) : undefined,
-        progress: 0,
+        price: values.budget ? parseFloat(values.budget) : 0,
         projectTypeId: selectedTypeId,
-        projectCategoryId: selectedCategoryId
-      });
+        projectCategoryId: selectedCategoryId,
+        updatedAt: new Date()
+      };
 
-      toast.success("Project created successfully!");
-      navigate(`/project/${project.id}`);
+      if (initialData) {
+        // Update existing project
+        if (onSubmit) {
+          onSubmit(projectData as Project);
+        }
+      } else {
+        // Create new project
+        const project = addProject(projectData);
+        
+        if (onSubmit) {
+          onSubmit(project);
+        } else {
+          toast.success("Project created successfully!");
+          navigate(`/project/${project.id}`);
+        }
+      }
     } catch (error) {
-      console.error("Error creating project:", error);
-      toast.error("Failed to create project. Please try again.");
+      console.error("Error saving project:", error);
+      toast.error("Failed to save project. Please try again.");
     }
   };
 
@@ -127,9 +151,17 @@ const ProjectForm = () => {
     }
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      navigate(-1);
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 w-full max-w-4xl">
+      <form onSubmit={form.handleSubmit(handleSubmitForm)} className="space-y-8 w-full max-w-4xl">
         <FormField
           control={form.control}
           name="name"
@@ -341,11 +373,11 @@ const ProjectForm = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate(-1)}
+            onClick={handleCancel}
           >
             Cancel
           </Button>
-          <Button type="submit">Create Project</Button>
+          <Button type="submit">{initialData ? 'Update Project' : 'Create Project'}</Button>
         </div>
       </form>
     </Form>

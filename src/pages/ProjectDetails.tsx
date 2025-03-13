@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +7,7 @@ import ProjectForm from "@/components/ProjectForm";
 import { Button } from "@/components/ui/button";
 import { Pencil, ArrowLeft, Calendar, DollarSign, Tag, FileText } from "lucide-react";
 import PageTransition from "@/components/ui-custom/PageTransition";
-import { sampleProjects } from "@/data/projects";
+import { sampleProjects, updateProject } from "@/data/projects";
 import { Project } from "@/types";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -59,15 +58,24 @@ const ProjectDetails = () => {
   };
 
   const handleUpdateProject = (updatedProject: Project) => {
-    setProject(updatedProject);
-    setIsEditFormOpen(false);
-    
-    // In a real app, you would save to a database here
-    // For now, we'll just update the UI
-    toast({
-      title: "Project updated",
-      description: "Your changes have been saved successfully",
-    });
+    if (project?.id) {
+      const result = updateProject(project.id, updatedProject);
+      if (result) {
+        setProject(result);
+        setIsEditFormOpen(false);
+        
+        toast({
+          title: "Project updated",
+          description: "Your changes have been saved successfully",
+        });
+      } else {
+        toast({
+          title: "Update failed",
+          description: "Could not update the project. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   if (isLoading) {

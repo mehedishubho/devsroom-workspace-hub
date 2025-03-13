@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +11,7 @@ import EmptyState from "@/components/ui-custom/EmptyState";
 import AddProjectButton from "@/components/ui-custom/AddProjectButton";
 import ProjectForm from "@/components/ProjectForm";
 import PageTransition from "@/components/ui-custom/PageTransition";
-import { sampleProjects } from "@/data/projects";
+import { sampleProjects, addProject } from "@/data/projects";
 import { sampleProjectTypes } from "@/data/projectTypes";
 import { sampleProjectCategories } from "@/data/projectTypes";
 import { Project } from "@/types";
@@ -36,11 +35,9 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const [availableCategories, setAvailableCategories] = useState(sampleProjectCategories);
 
-  // Filter projects based on search query and filters
   useEffect(() => {
     let filtered = projects;
     
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -51,12 +48,10 @@ const Index = () => {
       );
     }
     
-    // Apply type filter
     if (selectedType) {
       filtered = filtered.filter(project => project.projectTypeId === selectedType);
     }
     
-    // Apply category filter
     if (selectedCategory) {
       filtered = filtered.filter(project => project.projectCategoryId === selectedCategory);
     }
@@ -64,14 +59,12 @@ const Index = () => {
     setFilteredProjects(filtered);
   }, [searchQuery, projects, selectedType, selectedCategory]);
 
-  // Update available categories when project type changes
   useEffect(() => {
     if (selectedType) {
       const categories = sampleProjectCategories.filter(
         category => category.projectTypeId === selectedType
       );
       setAvailableCategories(categories);
-      // Reset selected category if it doesn't belong to the selected type
       if (selectedCategory) {
         const categoryExists = categories.some(c => c.id === selectedCategory);
         if (!categoryExists) {
@@ -96,11 +89,9 @@ const Index = () => {
   };
 
   const handleSaveProject = (data: Project) => {
-    // Check if project already exists (update) or is new (add)
     const existingIndex = projects.findIndex((p) => p.id === data.id);
     
     if (existingIndex >= 0) {
-      // Update existing project
       const updatedProjects = [...projects];
       updatedProjects[existingIndex] = data;
       setProjects(updatedProjects);
@@ -109,7 +100,6 @@ const Index = () => {
         description: `${data.name} has been updated successfully.`,
       });
     } else {
-      // Add new project
       setProjects([data, ...projects]);
       toast({
         title: "Project added",
