@@ -33,9 +33,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { sampleClients, addClient } from "@/data/clients";
-import { addProject } from "@/data/projects";
+import { addProject, updateProject } from "@/data/projects";
 import { Client, Project } from "@/types";
 import ProjectTypeSelector from "@/components/ui-custom/ProjectTypeSelector";
+
+// Type for the allowed project statuses
+type ProjectStatus = "active" | "completed" | "on-hold" | "cancelled" | "planning" | "in-progress" | "review";
 
 const formSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -50,7 +53,7 @@ const formSchema = z.object({
 });
 
 // Define the props interface for the ProjectForm component
-interface ProjectFormProps {
+export interface ProjectFormProps {
   initialData?: Project;
   onSubmit?: (project: Project) => void;
   onCancel?: () => void;
@@ -100,6 +103,9 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         setClients([...sampleClients]); // Refresh clients list
       }
 
+      // Convert the form status to a valid Project status type
+      const projectStatus = mapFormStatusToProjectStatus(values.projectStatus);
+
       const projectData = {
         ...(initialData || {}),
         name: values.name,
@@ -108,7 +114,7 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         description: values.description || "",
         startDate: values.startDate,
         endDate: values.deadlineDate,
-        status: values.projectStatus,
+        status: projectStatus,
         price: values.budget ? parseFloat(values.budget) : 0,
         projectTypeId: selectedTypeId,
         projectCategoryId: selectedCategoryId,
@@ -134,6 +140,23 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     } catch (error) {
       console.error("Error saving project:", error);
       toast.error("Failed to save project. Please try again.");
+    }
+  };
+
+  // Helper function to map form status values to valid Project status types
+  const mapFormStatusToProjectStatus = (formStatus: string): Project['status'] => {
+    switch (formStatus) {
+      case "completed":
+        return "completed";
+      case "on-hold":
+        return "on-hold";
+      case "cancelled":
+        return "cancelled";
+      case "planning":
+      case "in-progress":
+      case "review":
+      default:
+        return "active"; // Default to active for any other status
     }
   };
 
