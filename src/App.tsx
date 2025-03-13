@@ -12,6 +12,8 @@ import NotFound from "./pages/NotFound";
 import ProjectDetails from "./pages/ProjectDetails";
 import AccountSettings from "./pages/AccountSettings";
 import Clients from "./pages/Clients";
+import ClientDetails from "./pages/ClientDetails";
+import ProjectSettings from "./pages/ProjectSettings";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +44,16 @@ const App = () => (
             <Route path="/clients" element={
               <ProtectedRoute>
                 <Clients />
+              </ProtectedRoute>
+            } />
+            <Route path="/clients/:clientId" element={
+              <ProtectedRoute>
+                <ClientDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/project-settings" element={
+              <ProtectedRoute>
+                <ProjectSettings />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
