@@ -32,8 +32,17 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Project, Credential, Hosting, OtherAccess, Payment } from "@/types";
-import { sampleProjectTypes, sampleProjectCategories } from "@/data/projectTypes";
-import { sampleClients } from "@/data/clients";
+import { 
+  sampleProjectTypes, 
+  sampleProjectCategories, 
+  getCategoriesByTypeId 
+} from "@/data/projectTypes";
+import { 
+  sampleClients, 
+  getClientByName, 
+  getClientById, 
+  addClient 
+} from "@/data/clients";
 
 interface ProjectFormProps {
   initialData?: Partial<Project>;
@@ -122,9 +131,7 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   useEffect(() => {
     const projectTypeId = form.watch("projectTypeId");
     if (projectTypeId) {
-      const filteredCategories = sampleProjectCategories.filter(
-        category => category.projectTypeId === projectTypeId
-      );
+      const filteredCategories = getCategoriesByTypeId(projectTypeId);
       setAvailableCategories(filteredCategories);
       
       const currentCategory = form.watch("projectCategoryId");
@@ -149,9 +156,7 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       setIsNewClient(!clientExists);
       
       if (clientExists) {
-        const client = sampleClients.find(
-          client => client.name.toLowerCase() === clientName.toLowerCase()
-        );
+        const client = getClientByName(clientName);
         if (client) {
           form.setValue("clientId", client.id);
         }
@@ -291,8 +296,19 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     }
 
     let clientId = values.clientId || "";
+    
     if (isNewClient && values.clientName) {
-      clientId = generateId();
+      const newClient = addClient({
+        name: values.clientName,
+        email: `contact@${values.clientName.toLowerCase().replace(/\s+/g, '')}.com`,
+        phone: undefined
+      });
+      clientId = newClient.id;
+      
+      toast({
+        title: "New client created",
+        description: `Created client: ${newClient.name}`
+      });
     }
 
     const projectData: Project = {

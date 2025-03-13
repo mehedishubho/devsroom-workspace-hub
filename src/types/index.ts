@@ -1,4 +1,3 @@
-
 export interface Payment {
   id: string;
   amount: number;
@@ -32,6 +31,7 @@ export interface ProjectType {
   id: string;
   name: string;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface ProjectCategory {
@@ -39,6 +39,7 @@ export interface ProjectCategory {
   name: string;
   projectTypeId: string;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface Client {

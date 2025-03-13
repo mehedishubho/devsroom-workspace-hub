@@ -1,5 +1,5 @@
 
-import { Client } from "@/types";
+import { Client, Project } from "@/types";
 import { sampleProjects } from "./projects";
 
 export const sampleClients: Client[] = [
@@ -46,3 +46,69 @@ export const clientProjects = sampleProjects.map(project => {
     projectCategoryId: "cat-1"
   };
 });
+
+// Helper functions for client management
+export const getClientById = (id: string): Client | undefined => {
+  return sampleClients.find(client => client.id === id);
+};
+
+export const getClientByName = (name: string): Client | undefined => {
+  return sampleClients.find(client => client.name.toLowerCase() === name.toLowerCase());
+};
+
+export const getProjectsByClientId = (clientId: string): Project[] => {
+  return clientProjects.filter(project => project.clientId === clientId);
+};
+
+export const generateClientId = (): string => {
+  return Math.random().toString(36).substring(2, 11);
+};
+
+export const addClient = (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Client => {
+  const newClient: Client = {
+    id: generateClientId(),
+    ...client,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  
+  sampleClients.push(newClient);
+  return newClient;
+};
+
+export const updateClient = (
+  id: string, 
+  updates: Pick<Client, 'name' | 'email' | 'phone'>
+): Client | undefined => {
+  const clientIndex = sampleClients.findIndex(client => client.id === id);
+  
+  if (clientIndex === -1) return undefined;
+  
+  const updatedClient = {
+    ...sampleClients[clientIndex],
+    ...updates,
+    updatedAt: new Date()
+  };
+  
+  sampleClients[clientIndex] = updatedClient;
+  return updatedClient;
+};
+
+export const deleteClient = (id: string): boolean => {
+  const initialLength = sampleClients.length;
+  const filteredClients = sampleClients.filter(client => client.id !== id);
+  
+  if (filteredClients.length === initialLength) return false;
+  
+  sampleClients.length = 0;
+  sampleClients.push(...filteredClients);
+  
+  // Update projects associated with this client
+  clientProjects.forEach(project => {
+    if (project.clientId === id) {
+      project.clientId = "";
+    }
+  });
+  
+  return true;
+};
