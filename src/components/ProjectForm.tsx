@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -33,6 +32,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Project, Credential, Hosting, OtherAccess, Payment } from "@/types";
+import { sampleProjectTypes, sampleProjectCategories } from "@/data/projectTypes";
+import { sampleClients } from "@/data/clients";
 
 interface ProjectFormProps {
   initialData?: Partial<Project>;
@@ -40,10 +41,10 @@ interface ProjectFormProps {
   onCancel: () => void;
 }
 
-// Define schema for form validation
 const projectFormSchema = z.object({
   name: z.string().min(2, "Project name must be at least 2 characters"),
   clientName: z.string().min(2, "Client name must be at least 2 characters"),
+  clientId: z.string().optional(),
   description: z.string().optional(),
   url: z.string().url("Please enter a valid URL"),
   credentials: z.object({
@@ -65,6 +66,8 @@ const projectFormSchema = z.object({
   endDate: z.date().optional(),
   price: z.number().min(0, "Price must be a positive number"),
   status: z.enum(["active", "completed", "on-hold", "cancelled"]),
+  projectTypeId: z.string().optional(),
+  projectCategoryId: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -80,12 +83,15 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   const [payments, setPayments] = useState<Payment[]>(
     initialData?.payments || []
   );
+  const [availableCategories, setAvailableCategories] = useState(sampleProjectCategories);
+  const [isNewClient, setIsNewClient] = useState(false);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       name: initialData?.name || "",
       clientName: initialData?.clientName || "",
+      clientId: initialData?.clientId || "",
       description: initialData?.description || "",
       url: initialData?.url || "https://",
       credentials: initialData?.credentials || {
@@ -107,9 +113,53 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       endDate: initialData?.endDate,
       price: initialData?.price || 0,
       status: initialData?.status || "active",
+      projectTypeId: initialData?.projectTypeId || "",
+      projectCategoryId: initialData?.projectCategoryId || "",
       notes: initialData?.notes || "",
     },
   });
+
+  useEffect(() => {
+    const projectTypeId = form.watch("projectTypeId");
+    if (projectTypeId) {
+      const filteredCategories = sampleProjectCategories.filter(
+        category => category.projectTypeId === projectTypeId
+      );
+      setAvailableCategories(filteredCategories);
+      
+      const currentCategory = form.watch("projectCategoryId");
+      if (currentCategory) {
+        const categoryExists = filteredCategories.some(c => c.id === currentCategory);
+        if (!categoryExists) {
+          form.setValue("projectCategoryId", "");
+        }
+      }
+    } else {
+      setAvailableCategories([]);
+      form.setValue("projectCategoryId", "");
+    }
+  }, [form.watch("projectTypeId")]);
+
+  useEffect(() => {
+    const clientName = form.watch("clientName");
+    if (clientName) {
+      const clientExists = sampleClients.some(
+        client => client.name.toLowerCase() === clientName.toLowerCase()
+      );
+      setIsNewClient(!clientExists);
+      
+      if (clientExists) {
+        const client = sampleClients.find(
+          client => client.name.toLowerCase() === clientName.toLowerCase()
+        );
+        if (client) {
+          form.setValue("clientId", client.id);
+        }
+      } else {
+        form.setValue("clientId", "");
+      }
+    }
+  }, [form.watch("clientName")]);
 
   const handleAddAccess = () => {
     const newAccess: OtherAccess = {
@@ -209,8 +259,19 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     );
   };
 
+  const handleClientSelect = (clientName: string) => {
+    form.setValue("clientName", clientName);
+    const client = sampleClients.find(c => c.name === clientName);
+    if (client) {
+      form.setValue("clientId", client.id);
+      setIsNewClient(false);
+    } else {
+      form.setValue("clientId", "");
+      setIsNewClient(true);
+    }
+  };
+
   const handleSubmitForm = (values: ProjectFormValues) => {
-    // Check form validity before submission
     if (otherAccess.some((access) => !access.name || !access.credentials.username || !access.credentials.password)) {
       toast({
         title: "Invalid other access details",
@@ -229,11 +290,16 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       return;
     }
 
-    // Ensure all required fields are explicitly set with non-optional values
+    let clientId = values.clientId || "";
+    if (isNewClient && values.clientName) {
+      clientId = generateId();
+    }
+
     const projectData: Project = {
       id: initialData?.id || generateId(),
       name: values.name,
       clientName: values.clientName,
+      clientId: clientId,
       description: values.description || "",
       url: values.url,
       credentials: {
@@ -257,6 +323,8 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       price: values.price,
       payments,
       status: values.status,
+      projectTypeId: values.projectTypeId,
+      projectCategoryId: values.projectCategoryId,
       notes: values.notes || "",
       createdAt: initialData?.createdAt || new Date(),
       updatedAt: new Date(),
@@ -293,12 +361,87 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                 <FormItem>
                   <FormLabel>Client Name</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <div className="relative">
+                      <Input 
+                        {...field} 
+                        list="client-list" 
+                        className={isNewClient ? "border-dashed border-orange-400" : ""}
+                      />
+                      <datalist id="client-list">
+                        {sampleClients.map(client => (
+                          <option key={client.id} value={client.name} />
+                        ))}
+                      </datalist>
+                      {isNewClient && (
+                        <div className="text-xs text-orange-500 mt-1">
+                          New client will be created
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="projectTypeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Type</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {sampleProjectTypes.map(type => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="projectCategoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || ""}
+                      disabled={!form.watch("projectTypeId") || availableCategories.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableCategories.map(category => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

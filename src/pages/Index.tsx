@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Filter, ListFilter } from "lucide-react";
+import { PlusCircle, Filter, ListFilter, X } from "lucide-react";
 import Dashboard from "@/components/layout/Dashboard";
 import SearchBar from "@/components/ui-custom/SearchBar";
 import ProjectCard from "@/components/ui-custom/ProjectCard";
@@ -13,7 +13,16 @@ import AddProjectButton from "@/components/ui-custom/AddProjectButton";
 import ProjectForm from "@/components/ProjectForm";
 import PageTransition from "@/components/ui-custom/PageTransition";
 import { sampleProjects } from "@/data/projects";
+import { sampleProjectTypes } from "@/data/projectTypes";
+import { sampleProjectCategories } from "@/data/projectTypes";
 import { Project } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Index = () => {
   const { toast } = useToast();
@@ -22,22 +31,57 @@ const Index = () => {
   const [filteredProjects, setFilteredProjects] = useState<Project[]>(projects);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const [availableCategories, setAvailableCategories] = useState(sampleProjectCategories);
 
-  // Filter projects based on search query
+  // Filter projects based on search query and filters
   useEffect(() => {
+    let filtered = projects;
+    
+    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      const filtered = projects.filter(
+      filtered = filtered.filter(
         (project) =>
           project.name.toLowerCase().includes(query) ||
           project.clientName.toLowerCase().includes(query) ||
           project.url.toLowerCase().includes(query)
       );
-      setFilteredProjects(filtered);
-    } else {
-      setFilteredProjects(projects);
     }
-  }, [searchQuery, projects]);
+    
+    // Apply type filter
+    if (selectedType) {
+      filtered = filtered.filter(project => project.projectTypeId === selectedType);
+    }
+    
+    // Apply category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(project => project.projectCategoryId === selectedCategory);
+    }
+    
+    setFilteredProjects(filtered);
+  }, [searchQuery, projects, selectedType, selectedCategory]);
+
+  // Update available categories when project type changes
+  useEffect(() => {
+    if (selectedType) {
+      const categories = sampleProjectCategories.filter(
+        category => category.projectTypeId === selectedType
+      );
+      setAvailableCategories(categories);
+      // Reset selected category if it doesn't belong to the selected type
+      if (selectedCategory) {
+        const categoryExists = categories.some(c => c.id === selectedCategory);
+        if (!categoryExists) {
+          setSelectedCategory(undefined);
+        }
+      }
+    } else {
+      setAvailableCategories(sampleProjectCategories);
+    }
+  }, [selectedType, selectedCategory]);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -76,6 +120,15 @@ const Index = () => {
     setIsFormOpen(false);
   };
 
+  const toggleFilter = () => {
+    setIsFilterOpen(!isFilterOpen);
+  };
+
+  const clearFilters = () => {
+    setSelectedType(undefined);
+    setSelectedCategory(undefined);
+  };
+
   return (
     <Dashboard>
       <PageTransition>
@@ -90,30 +143,80 @@ const Index = () => {
             <AddProjectButton onClick={handleAddProject} />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <SearchBar onSearch={handleSearch} placeholder="Search by project name, client, or URL..." />
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <SearchBar onSearch={handleSearch} placeholder="Search by project name, client, or URL..." />
+              </div>
+              <Button
+                variant={isFilterOpen ? "default" : "outline"}
+                onClick={toggleFilter}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                <span>Filter</span>
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 bg-white/50 dark:bg-black/20 hover:bg-white/60 dark:hover:bg-black/30"
-            >
-              <Filter className="h-4 w-4" />
-              <span>Filter</span>
-            </Button>
+
+            {isFilterOpen && (
+              <div className="bg-secondary/10 p-4 rounded-lg space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">Filter Projects</h3>
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
+                    <X className="h-4 w-4 mr-1" /> Clear
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Project Type</label>
+                    <Select value={selectedType} onValueChange={setSelectedType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sampleProjectTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Category</label>
+                    <Select 
+                      value={selectedCategory} 
+                      onValueChange={setSelectedCategory}
+                      disabled={availableCategories.length === 0}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableCategories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {filteredProjects.length === 0 ? (
             <EmptyState
-              title={searchQuery ? "No matching projects" : "No projects yet"}
+              title={searchQuery || selectedType || selectedCategory ? "No matching projects" : "No projects yet"}
               description={
-                searchQuery
+                searchQuery || selectedType || selectedCategory
                   ? "Try adjusting your search query or filters."
                   : "Create your first project to get started."
               }
-              icon={searchQuery ? <ListFilter className="h-6 w-6 text-primary" /> : <PlusCircle className="h-6 w-6 text-primary" />}
+              icon={searchQuery || selectedType || selectedCategory ? <ListFilter className="h-6 w-6 text-primary" /> : <PlusCircle className="h-6 w-6 text-primary" />}
               action={
-                searchQuery
+                searchQuery || selectedType || selectedCategory
                   ? undefined
                   : {
                       label: "Add Project",

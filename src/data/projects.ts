@@ -6,6 +6,7 @@ export const sampleProjects: Project[] = [
     id: "1",
     name: "E-commerce Website Redesign",
     clientName: "Fashion Boutique Inc.",
+    clientId: "1",
     description: "Complete redesign of the client's e-commerce platform with new product catalog and checkout flow.",
     url: "https://fashionboutique.com",
     credentials: {
@@ -66,6 +67,8 @@ export const sampleProjects: Project[] = [
         status: "pending"
       }
     ],
+    projectTypeId: "type-1",
+    projectCategoryId: "cat-1",
     status: "active",
     notes: "Client requested additional animations on product pages.",
     createdAt: new Date("2023-03-10"),
@@ -75,6 +78,7 @@ export const sampleProjects: Project[] = [
     id: "2",
     name: "Corporate Website",
     clientName: "Tech Solutions Ltd.",
+    clientId: "2",
     description: "Development of a new corporate website with blog and case studies section.",
     url: "https://techsolutions.com",
     credentials: {
@@ -119,6 +123,8 @@ export const sampleProjects: Project[] = [
         status: "completed"
       }
     ],
+    projectTypeId: "type-2",
+    projectCategoryId: "cat-4",
     status: "completed",
     createdAt: new Date("2023-01-05"),
     updatedAt: new Date("2023-03-25")
@@ -127,6 +133,7 @@ export const sampleProjects: Project[] = [
     id: "3",
     name: "Mobile App Development",
     clientName: "Health Tracker Inc.",
+    clientId: "3",
     description: "iOS and Android mobile application for health tracking and fitness.",
     url: "https://apps.apple.com/healthtracker",
     credentials: {
@@ -172,6 +179,8 @@ export const sampleProjects: Project[] = [
         status: "completed"
       }
     ],
+    projectTypeId: "type-3",
+    projectCategoryId: "cat-6",
     status: "active",
     createdAt: new Date("2023-04-25"),
     updatedAt: new Date("2023-06-28")

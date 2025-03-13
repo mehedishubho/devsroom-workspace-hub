@@ -28,10 +28,33 @@ export interface OtherAccess {
   notes?: string;
 }
 
+export interface ProjectType {
+  id: string;
+  name: string;
+  createdAt: Date;
+}
+
+export interface ProjectCategory {
+  id: string;
+  name: string;
+  projectTypeId: string;
+  createdAt: Date;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Project {
   id: string;
   name: string;
   clientName: string;
+  clientId: string;
   description?: string;
   url: string;
   credentials: Credential;
@@ -42,6 +65,8 @@ export interface Project {
   price: number;
   payments: Payment[];
   status: 'active' | 'completed' | 'on-hold' | 'cancelled';
+  projectTypeId?: string;
+  projectCategoryId?: string;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
