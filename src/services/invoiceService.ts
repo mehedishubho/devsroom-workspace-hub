@@ -12,32 +12,27 @@ const isValidUUID = (id: string): boolean => {
 
 /**
  * Handles mock or sample projects which may use numeric IDs instead of UUIDs
+ * Creates a consistent mock UUID to ensure referential integrity
  */
 const handleMockProjectId = (projectId: string): string => {
+  // Return the UUID as-is if it's already a valid UUID
+  if (isValidUUID(projectId)) {
+    return projectId;
+  }
+  
   // If we're using sample data with numeric IDs (like '1'), 
   // create a deterministic UUID based on that ID
-  if (!isValidUUID(projectId) && /^\d+$/.test(projectId)) {
-    // For longer IDs, use a hash-like approach to create a valid UUID
-    let mockUUID;
-    
-    // Use the first 9 digits or padded zeros for shorter IDs
-    if (projectId.length <= 9) {
-      mockUUID = `00000000-0000-4000-a000-000000000${projectId.padStart(3, '0')}`;
-    } else {
-      // For longer IDs, truncate and distribute the digits across the UUID sections
-      const digits = projectId.substring(0, Math.min(projectId.length, 32));
-      const p1 = digits.substring(0, 8).padStart(8, '0');
-      const p2 = digits.substring(8, 12).padStart(4, '0');
-      const p3 = '4' + digits.substring(12, 15).padStart(3, '0');
-      const p4 = '8' + digits.substring(15, 18).padStart(3, '0');
-      const p5 = digits.substring(18, 30).padStart(12, '0');
-      
-      mockUUID = `${p1}-${p2}-${p3}-${p4}-${p5}`;
-    }
+  if (/^\d+$/.test(projectId)) {
+    // Simple numeric ID to mock UUID conversion that's consistent
+    const paddedId = projectId.padStart(3, '0');
+    const mockUUID = `00000000-0000-4000-a000-000000${paddedId}`;
     
     console.log(`Converting numeric project ID to mock UUID: ${projectId} -> ${mockUUID}`);
     return mockUUID;
   }
+  
+  // If not a valid UUID and not a numeric ID, return as-is (though this should be rare)
+  console.warn(`Invalid project ID format: ${projectId}`);
   return projectId;
 };
 
@@ -47,6 +42,7 @@ const handleMockProjectId = (projectId: string): string => {
 export const generateInvoice = async (projectId: string): Promise<Invoice | null> => {
   try {
     const safeProjectId = handleMockProjectId(projectId);
+    console.log(`Generating invoice for project ID: ${projectId} (safe ID: ${safeProjectId})`);
     
     // First check if the project exists in the projects table
     const { data: projectData, error: projectError } = await supabase
@@ -65,7 +61,7 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
           .from('projects')
           .insert({
             id: safeProjectId,
-            name: 'Sample Project',
+            name: `Sample Project ${projectId}`,
             client_id: null,
             status: 'active',
             start_date: new Date().toISOString()
@@ -76,6 +72,8 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
           console.error("Error creating sample project:", insertError);
           throw new Error(`Failed to create sample project: ${insertError.message}`);
         }
+        
+        console.log("Sample project created successfully:", insertData);
       } else {
         console.error("Project not found in production environment");
         throw new Error("Project not found");
@@ -84,6 +82,7 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
     
     try {
       // Call the database function to generate the invoice
+      console.log(`Calling create_invoice_for_project with project_id: ${safeProjectId}`);
       const { data, error } = await supabase.rpc('create_invoice_for_project', {
         project_id_param: safeProjectId,
         invoice_date: new Date().toISOString()
@@ -94,6 +93,8 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
         throw new Error(`Failed to generate invoice: ${error.message}`);
       }
   
+      console.log("Invoice generated successfully, ID:", data);
+      
       // Fetch the newly generated invoice with its items
       if (data) {
         return await getInvoiceById(data);

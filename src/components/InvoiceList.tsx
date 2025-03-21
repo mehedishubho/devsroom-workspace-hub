@@ -59,7 +59,7 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
       const errorMessage = err?.message || "Could not load invoices. Please try again.";
       setError(errorMessage);
       toast({
-        title: "Error",
+        title: "Error Loading Invoices",
         description: errorMessage,
         variant: "destructive",
       });
@@ -82,11 +82,13 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
     try {
       // Show toast for generating invoice
       toast({
-        title: "Generating invoice",
+        title: "Generating Invoice",
         description: "Please wait while we generate your invoice...",
       });
       
+      console.log(`Attempting to generate invoice for project ${project.id}`);
       const invoice = await generateInvoice(project.id);
+      
       if (invoice) {
         setInvoices(prev => [invoice, ...prev]);
         toast({
@@ -101,7 +103,7 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
       const errorMessage = err?.message || "Could not generate invoice. Please try again.";
       setError(errorMessage);
       toast({
-        title: "Error",
+        title: "Invoice Generation Failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -218,6 +220,7 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
               variant="outline" 
               size="icon"
               className="h-9 w-9"
+              title="Retry loading invoices"
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
