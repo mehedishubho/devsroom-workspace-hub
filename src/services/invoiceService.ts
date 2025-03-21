@@ -7,7 +7,7 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
     // Call the database function to generate the invoice
     const { data, error } = await supabase.rpc('create_invoice_for_project', {
       project_id_param: projectId,
-      invoice_date: new Date()
+      invoice_date: new Date().toISOString()
     });
 
     if (error) {
@@ -58,7 +58,7 @@ export const getInvoiceById = async (invoiceId: string): Promise<Invoice | null>
       projectId: invoiceData.project_id,
       invoiceNumber: invoiceData.invoice_number,
       amount: invoiceData.amount,
-      status: invoiceData.status,
+      status: invoiceData.status as Invoice['status'],
       issueDate: new Date(invoiceData.issue_date),
       dueDate: invoiceData.due_date ? new Date(invoiceData.due_date) : undefined,
       sentDate: invoiceData.sent_date ? new Date(invoiceData.sent_date) : undefined,
@@ -135,7 +135,7 @@ export const getProjectInvoices = async (projectId: string): Promise<Invoice[]> 
       projectId: invoice.project_id,
       invoiceNumber: invoice.invoice_number,
       amount: invoice.amount,
-      status: invoice.status,
+      status: invoice.status as Invoice['status'],
       issueDate: new Date(invoice.issue_date),
       dueDate: invoice.due_date ? new Date(invoice.due_date) : undefined,
       sentDate: invoice.sent_date ? new Date(invoice.sent_date) : undefined,
@@ -161,9 +161,9 @@ export const updateInvoiceStatus = async (
     
     // Add date fields based on status
     if (status === 'sent') {
-      updates.sent_date = new Date();
+      updates.sent_date = new Date().toISOString();
     } else if (status === 'paid') {
-      updates.paid_date = new Date();
+      updates.paid_date = new Date().toISOString();
     }
     
     if (notes !== undefined) {
