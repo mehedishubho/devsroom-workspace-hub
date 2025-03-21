@@ -28,6 +28,39 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
   try {
     const safeProjectId = handleMockProjectId(projectId);
     
+    // First check if the project exists in the projects table
+    const { data: projectData, error: projectError } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('id', safeProjectId)
+      .single();
+    
+    if (projectError) {
+      console.error("Project not found:", projectError);
+      
+      // If it's a development environment, create a sample project
+      if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
+        console.log("In development mode, creating sample project");
+        const { data: insertData, error: insertError } = await supabase
+          .from('projects')
+          .insert({
+            id: safeProjectId,
+            name: 'Sample Project',
+            status: 'active',
+            start_date: new Date().toISOString()
+          })
+          .select();
+          
+        if (insertError) {
+          console.error("Error creating sample project:", insertError);
+          throw insertError;
+        }
+      } else {
+        console.error("Project not found in production environment");
+        throw new Error("Project not found");
+      }
+    }
+    
     // Call the database function to generate the invoice
     const { data, error } = await supabase.rpc('create_invoice_for_project', {
       project_id_param: safeProjectId,

@@ -79,6 +79,12 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
     setError(null);
     
     try {
+      // Show toast for generating invoice
+      toast({
+        title: "Generating invoice",
+        description: "Please wait while we generate your invoice...",
+      });
+      
       const invoice = await generateInvoice(project.id);
       if (invoice) {
         setInvoices(prev => [invoice, ...prev]);
@@ -87,12 +93,13 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
           description: `Invoice ${invoice.invoiceNumber} generated successfully.`,
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error generating invoice:", err);
-      setError("Could not generate invoice. Please try again.");
+      const errorMessage = err?.message || "Could not generate invoice. Please try again.";
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: "Could not generate invoice. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
