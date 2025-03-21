@@ -1,3 +1,4 @@
+
 export interface Payment {
   id: string;
   amount: number;
@@ -69,6 +70,33 @@ export interface Project {
   projectTypeId?: string;
   projectCategoryId?: string;
   notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InvoiceItem {
+  id: string;
+  invoiceId: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Invoice {
+  id: string;
+  projectId: string;
+  invoiceNumber: string;
+  amount: number;
+  status: 'draft' | 'sent' | 'paid' | 'cancelled';
+  issueDate: Date;
+  dueDate?: Date;
+  sentDate?: Date;
+  paidDate?: Date;
+  notes?: string;
+  items: InvoiceItem[];
   createdAt: Date;
   updatedAt: Date;
 }
