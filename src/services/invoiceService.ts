@@ -2,11 +2,35 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Invoice, InvoiceItem } from "@/types";
 
+/**
+ * Validates if a string is a valid UUID
+ */
+const isValidUUID = (id: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
+
+/**
+ * Handles mock or sample projects which may use numeric IDs instead of UUIDs
+ */
+const handleMockProjectId = (projectId: string): string => {
+  // If we're using sample data with numeric IDs (like '1'), 
+  // create a deterministic UUID based on that ID
+  if (!isValidUUID(projectId) && /^\d+$/.test(projectId)) {
+    const mockUUID = `00000000-0000-4000-a000-000000000${projectId.padStart(3, '0')}`;
+    console.log(`Converting numeric project ID to mock UUID: ${projectId} -> ${mockUUID}`);
+    return mockUUID;
+  }
+  return projectId;
+};
+
 export const generateInvoice = async (projectId: string): Promise<Invoice | null> => {
   try {
+    const safeProjectId = handleMockProjectId(projectId);
+    
     // Call the database function to generate the invoice
     const { data, error } = await supabase.rpc('create_invoice_for_project', {
-      project_id_param: projectId,
+      project_id_param: safeProjectId,
       invoice_date: new Date().toISOString()
     });
 
@@ -87,16 +111,24 @@ export const getInvoiceById = async (invoiceId: string): Promise<Invoice | null>
 
 export const getProjectInvoices = async (projectId: string): Promise<Invoice[]> => {
   try {
+    const safeProjectId = handleMockProjectId(projectId);
+    console.log(`Fetching invoices for project ID: ${projectId} (safe ID: ${safeProjectId})`);
+    
     // Fetch all invoices for the project
     const { data: invoicesData, error: invoicesError } = await supabase
       .from('invoices')
       .select('*')
-      .eq('project_id', projectId)
+      .eq('project_id', safeProjectId)
       .order('created_at', { ascending: false });
 
     if (invoicesError) {
       console.error("Error fetching project invoices:", invoicesError);
       throw invoicesError;
+    }
+
+    // If there are no invoices, return an empty array
+    if (!invoicesData || invoicesData.length === 0) {
+      return [];
     }
 
     // Fetch all invoice items for these invoices

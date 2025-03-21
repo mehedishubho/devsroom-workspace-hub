@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Invoice, Project } from "@/types";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Send, FileText, Trash } from "lucide-react";
+import { Plus, Send, FileText, Trash, RefreshCw } from "lucide-react";
 import { generateInvoice, getProjectInvoices, updateInvoiceStatus, deleteInvoice } from "@/services/invoiceService";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface InvoiceListProps {
   project: Project;
@@ -42,17 +43,20 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [dataFetched, setDataFetched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadInvoices = async () => {
-    if (dataFetched) return;
-    
     setIsLoading(true);
+    setError(null);
+    
     try {
+      console.log(`Loading invoices for project ${project.id}`);
       const data = await getProjectInvoices(project.id);
       setInvoices(data);
       setDataFetched(true);
-    } catch (error) {
-      console.error("Error loading invoices:", error);
+    } catch (err) {
+      console.error("Error loading invoices:", err);
+      setError("Could not load invoices. Please try again.");
       toast({
         title: "Error",
         description: "Could not load invoices. Please try again.",
@@ -64,12 +68,16 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
   };
 
   // Load invoices when component mounts
-  if (!dataFetched && !isLoading) {
-    loadInvoices();
-  }
+  useEffect(() => {
+    if (!dataFetched && !isLoading) {
+      loadInvoices();
+    }
+  }, [project.id, dataFetched, isLoading]);
 
   const handleGenerateInvoice = async () => {
     setIsGenerating(true);
+    setError(null);
+    
     try {
       const invoice = await generateInvoice(project.id);
       if (invoice) {
@@ -79,8 +87,9 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
           description: `Invoice ${invoice.invoiceNumber} generated successfully.`,
         });
       }
-    } catch (error) {
-      console.error("Error generating invoice:", error);
+    } catch (err) {
+      console.error("Error generating invoice:", err);
+      setError("Could not generate invoice. Please try again.");
       toast({
         title: "Error",
         description: "Could not generate invoice. Please try again.",
@@ -93,6 +102,7 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
 
   const handleSendInvoice = async (invoice: Invoice) => {
     setIsSending({ ...isSending, [invoice.id]: true });
+    setError(null);
     
     try {
       // Call the Edge Function to send the invoice
@@ -107,6 +117,9 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
 
       if (error) throw error;
 
+      // Update invoice status
+      await updateInvoiceStatus(invoice.id, 'sent');
+
       // Update local state
       setInvoices(invoices.map(inv => 
         inv.id === invoice.id 
@@ -118,8 +131,9 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
         title: "Invoice Sent",
         description: `Invoice ${invoice.invoiceNumber} has been sent to ${project.clientName}.`,
       });
-    } catch (error) {
-      console.error("Error sending invoice:", error);
+    } catch (err) {
+      console.error("Error sending invoice:", err);
+      setError("Failed to send invoice. Please try again.");
       toast({
         title: "Error",
         description: "Failed to send invoice. Please try again.",
@@ -139,6 +153,8 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
     if (!invoiceToDelete) return;
     
     setIsDeleting({ ...isDeleting, [invoiceToDelete.id]: true });
+    setError(null);
+    
     try {
       await deleteInvoice(invoiceToDelete.id);
       setInvoices(invoices.filter(inv => inv.id !== invoiceToDelete.id));
@@ -146,8 +162,9 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
         title: "Invoice Deleted",
         description: `Invoice ${invoiceToDelete.invoiceNumber} has been deleted.`,
       });
-    } catch (error) {
-      console.error("Error deleting invoice:", error);
+    } catch (err) {
+      console.error("Error deleting invoice:", err);
+      setError("Failed to delete invoice. Please try again.");
       toast({
         title: "Error",
         description: "Failed to delete invoice. Please try again.",
@@ -158,6 +175,11 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
       setDeleteConfirmOpen(false);
       setInvoiceToDelete(null);
     }
+  };
+
+  const handleRetry = () => {
+    setDataFetched(false);
+    loadInvoices();
   };
 
   const getStatusBadge = (status: Invoice['status']) => {
@@ -179,16 +201,35 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Invoices</CardTitle>
-        <Button 
-          onClick={handleGenerateInvoice} 
-          disabled={isGenerating}
-          className="flex items-center gap-1"
-        >
-          <Plus className="h-4 w-4" /> 
-          {isGenerating ? "Generating..." : "Generate Invoice"}
-        </Button>
+        <div className="flex gap-2">
+          {error && (
+            <Button 
+              onClick={handleRetry} 
+              variant="outline" 
+              size="icon"
+              className="h-9 w-9"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          )}
+          <Button 
+            onClick={handleGenerateInvoice} 
+            disabled={isGenerating}
+            className="flex items-center gap-1"
+          >
+            <Plus className="h-4 w-4" /> 
+            {isGenerating ? "Generating..." : "Generate Invoice"}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         {isLoading ? (
           <div className="flex justify-center py-6">
             <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary"></div>
