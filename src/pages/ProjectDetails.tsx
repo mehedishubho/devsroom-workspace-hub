@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -15,8 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import PaymentItem from "@/components/ui-custom/PaymentItem";
 import { Separator } from "@/components/ui/separator";
-import InvoiceList from "@/components/InvoiceList";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ProjectDetails = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -25,7 +22,6 @@ const ProjectDetails = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
 
   // Fetch project details
   useEffect(() => {
@@ -136,122 +132,39 @@ const ProjectDetails = () => {
             </Button>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="access">Access & Credentials</TabsTrigger>
-              <TabsTrigger value="invoices">Invoices & Payments</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="overview" className="space-y-6 pt-4">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="col-span-1 lg:col-span-3">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Project Overview</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
-                        <p>{project.description || "No description provided."}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Project URL</h3>
-                        <a 
-                          href={project.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline break-all"
-                        >
-                          {project.url}
-                        </a>
-                      </div>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="col-span-1 lg:col-span-3 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+                    <p>{project.description || "No description provided."}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Project URL</h3>
+                    <a 
+                      href={project.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline break-all"
+                    >
+                      {project.url}
+                    </a>
+                  </div>
 
-                      {project.notes && (
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground mb-1">Notes</h3>
-                          <p>{project.notes}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
+                  {project.notes && (
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Notes</h3>
+                      <p>{project.notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-                <div className="col-span-1 space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Project Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span className="text-sm">Start Date</span>
-                        </div>
-                        <span className="text-sm font-medium">
-                          {format(new Date(project.startDate), "MMM d, yyyy")}
-                        </span>
-                      </div>
-                      
-                      {project.endDate && (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span className="text-sm">End Date</span>
-                          </div>
-                          <span className="text-sm font-medium">
-                            {format(new Date(project.endDate), "MMM d, yyyy")}
-                          </span>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span className="text-sm">Project Price</span>
-                        </div>
-                        <span className="text-sm font-medium">
-                          ${project.price.toLocaleString()}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span className="text-sm">Status</span>
-                        </div>
-                        <Badge className={getStatusColor(project.status)}>
-                          {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span className="text-sm">Created</span>
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(project.createdAt), "MMM d, yyyy")}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span className="text-sm">Updated</span>
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(project.updatedAt), "MMM d, yyyy")}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="access" className="space-y-6 pt-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Access & Credentials</CardTitle>
@@ -366,38 +279,99 @@ const ProjectDetails = () => {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
-            
-            <TabsContent value="invoices" className="space-y-6 pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
-                  <InvoiceList project={project} />
-                </div>
-                
-                <div className="md:col-span-1">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Payments</CardTitle>
-                      <CardDescription>Payment history and schedule</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {project.payments.length === 0 ? (
-                        <div className="text-center py-6">
-                          <p className="text-muted-foreground">No payments added yet</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {project.payments.map((payment) => (
-                            <PaymentItem key={payment.id} payment={payment} />
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Payments</CardTitle>
+                  <CardDescription>Payment history and schedule</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {project.payments.length === 0 ? (
+                    <div className="text-center py-6">
+                      <p className="text-muted-foreground">No payments added yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {project.payments.map((payment) => (
+                        <PaymentItem key={payment.id} payment={payment} />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="col-span-1 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-sm">Start Date</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {format(new Date(project.startDate), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                  
+                  {project.endDate && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span className="text-sm">End Date</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {format(new Date(project.endDate), "MMM d, yyyy")}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-sm">Project Price</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      ${project.price.toLocaleString()}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-sm">Status</span>
+                    </div>
+                    <Badge className={getStatusColor(project.status)}>
+                      {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-sm">Created</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {format(new Date(project.createdAt), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-sm">Updated</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {format(new Date(project.updatedAt), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
 
         <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
