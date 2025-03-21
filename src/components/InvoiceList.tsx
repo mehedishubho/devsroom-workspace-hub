@@ -54,12 +54,13 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
       const data = await getProjectInvoices(project.id);
       setInvoices(data);
       setDataFetched(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error loading invoices:", err);
-      setError("Could not load invoices. Please try again.");
+      const errorMessage = err?.message || "Could not load invoices. Please try again.";
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: "Could not load invoices. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -92,6 +93,8 @@ const InvoiceList = ({ project }: InvoiceListProps) => {
           title: "Success",
           description: `Invoice ${invoice.invoiceNumber} generated successfully.`,
         });
+      } else {
+        throw new Error("Failed to generate invoice. No invoice returned.");
       }
     } catch (err: any) {
       console.error("Error generating invoice:", err);

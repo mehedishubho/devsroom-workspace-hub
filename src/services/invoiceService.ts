@@ -17,13 +17,33 @@ const handleMockProjectId = (projectId: string): string => {
   // If we're using sample data with numeric IDs (like '1'), 
   // create a deterministic UUID based on that ID
   if (!isValidUUID(projectId) && /^\d+$/.test(projectId)) {
-    const mockUUID = `00000000-0000-4000-a000-000000000${projectId.padStart(3, '0')}`;
+    // For longer IDs, use a hash-like approach to create a valid UUID
+    let mockUUID;
+    
+    // Use the first 9 digits or padded zeros for shorter IDs
+    if (projectId.length <= 9) {
+      mockUUID = `00000000-0000-4000-a000-000000000${projectId.padStart(3, '0')}`;
+    } else {
+      // For longer IDs, truncate and distribute the digits across the UUID sections
+      const digits = projectId.substring(0, Math.min(projectId.length, 32));
+      const p1 = digits.substring(0, 8).padStart(8, '0');
+      const p2 = digits.substring(8, 12).padStart(4, '0');
+      const p3 = '4' + digits.substring(12, 15).padStart(3, '0');
+      const p4 = '8' + digits.substring(15, 18).padStart(3, '0');
+      const p5 = digits.substring(18, 30).padStart(12, '0');
+      
+      mockUUID = `${p1}-${p2}-${p3}-${p4}-${p5}`;
+    }
+    
     console.log(`Converting numeric project ID to mock UUID: ${projectId} -> ${mockUUID}`);
     return mockUUID;
   }
   return projectId;
 };
 
+/**
+ * Generates an invoice for a project
+ */
 export const generateInvoice = async (projectId: string): Promise<Invoice | null> => {
   try {
     const safeProjectId = handleMockProjectId(projectId);
@@ -31,7 +51,7 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
     // First check if the project exists in the projects table
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
-      .select('id')
+      .select('id, name, client_id')
       .eq('id', safeProjectId)
       .single();
     
@@ -46,6 +66,7 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
           .insert({
             id: safeProjectId,
             name: 'Sample Project',
+            client_id: null,
             status: 'active',
             start_date: new Date().toISOString()
           })
@@ -53,7 +74,7 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
           
         if (insertError) {
           console.error("Error creating sample project:", insertError);
-          throw insertError;
+          throw new Error(`Failed to create sample project: ${insertError.message}`);
         }
       } else {
         console.error("Project not found in production environment");
@@ -61,24 +82,29 @@ export const generateInvoice = async (projectId: string): Promise<Invoice | null
       }
     }
     
-    // Call the database function to generate the invoice
-    const { data, error } = await supabase.rpc('create_invoice_for_project', {
-      project_id_param: safeProjectId,
-      invoice_date: new Date().toISOString()
-    });
-
-    if (error) {
-      console.error("Error generating invoice:", error);
-      throw error;
-    }
-
-    // Fetch the newly generated invoice with its items
-    if (data) {
-      return await getInvoiceById(data);
+    try {
+      // Call the database function to generate the invoice
+      const { data, error } = await supabase.rpc('create_invoice_for_project', {
+        project_id_param: safeProjectId,
+        invoice_date: new Date().toISOString()
+      });
+  
+      if (error) {
+        console.error("Error generating invoice:", error);
+        throw new Error(`Failed to generate invoice: ${error.message}`);
+      }
+  
+      // Fetch the newly generated invoice with its items
+      if (data) {
+        return await getInvoiceById(data);
+      }
+    } catch (error: any) {
+      console.error("Error calling create_invoice_for_project:", error);
+      throw new Error(`Database error: ${error.message}`);
     }
     
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in generateInvoice:", error);
     throw error;
   }
