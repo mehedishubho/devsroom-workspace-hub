@@ -1,3 +1,4 @@
+
 export interface Payment {
   id: string;
   amount: number;
@@ -74,3 +75,29 @@ export interface Project {
 }
 
 export type ProjectFormData = Omit<Project, 'id' | 'createdAt' | 'updatedAt'>;
+
+export interface Invoice {
+  id: string;
+  projectId: string;
+  projectName: string;
+  clientName: string;
+  invoiceNumber: string;
+  amount: number;
+  status: string;
+  issueDate: Date;
+  dueDate: Date;
+  sentDate?: Date;
+  paidDate?: Date;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InvoiceItem {
+  id: string;
+  invoiceId: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -11,10 +12,9 @@ import EmptyState from "@/components/ui-custom/EmptyState";
 import AddProjectButton from "@/components/ui-custom/AddProjectButton";
 import ProjectForm from "@/components/ProjectForm";
 import PageTransition from "@/components/ui-custom/PageTransition";
-import { sampleProjects, addProject } from "@/data/projects";
-import { sampleProjectTypes } from "@/data/projectTypes";
-import { sampleProjectCategories } from "@/data/projectTypes";
 import { Project } from "@/types";
+import { getProjects, addProject as addProjectToDb } from "@/services/projectService";
+import { getProjectTypes, getProjectCategories } from "@/services/projectTypeService";
 import {
   Select,
   SelectContent,
@@ -22,49 +22,82 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 
 const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>(sampleProjects);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>(projects);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const [availableCategories, setAvailableCategories] = useState(sampleProjectCategories);
+  const [availableCategories, setAvailableCategories] = useState<any[]>([]);
 
-  useEffect(() => {
-    let filtered = projects;
-    
+  // Fetch projects using React Query
+  const { 
+    data: projects = [], 
+    isLoading: isLoadingProjects,
+    isError: isProjectsError,
+    refetch: refetchProjects
+  } = useQuery({
+    queryKey: ['projects'],
+    queryFn: getProjects
+  });
+
+  // Fetch project types using React Query
+  const {
+    data: projectTypes = [],
+    isLoading: isLoadingTypes
+  } = useQuery({
+    queryKey: ['projectTypes'],
+    queryFn: getProjectTypes
+  });
+
+  // Fetch project categories using React Query
+  const {
+    data: projectCategories = [],
+    isLoading: isLoadingCategories
+  } = useQuery({
+    queryKey: ['projectCategories'],
+    queryFn: getProjectCategories
+  });
+
+  // Filter projects based on search and filters
+  const filteredProjects = projects.filter(project => {
+    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (project) =>
-          project.name.toLowerCase().includes(query) ||
-          project.clientName.toLowerCase().includes(query) ||
-          project.url.toLowerCase().includes(query)
-      );
+      const matchesSearch = 
+        project.name.toLowerCase().includes(query) ||
+        project.clientName.toLowerCase().includes(query) ||
+        (project.url && project.url.toLowerCase().includes(query));
+      
+      if (!matchesSearch) return false;
     }
     
-    if (selectedType) {
-      filtered = filtered.filter(project => project.projectTypeId === selectedType);
+    // Filter by project type
+    if (selectedType && project.projectTypeId !== selectedType) {
+      return false;
     }
     
-    if (selectedCategory) {
-      filtered = filtered.filter(project => project.projectCategoryId === selectedCategory);
+    // Filter by category
+    if (selectedCategory && project.projectCategoryId !== selectedCategory) {
+      return false;
     }
     
-    setFilteredProjects(filtered);
-  }, [searchQuery, projects, selectedType, selectedCategory]);
+    return true;
+  });
 
+  // Update available categories when selected type changes
   useEffect(() => {
     if (selectedType) {
-      const categories = sampleProjectCategories.filter(
+      const categories = projectCategories.filter(
         category => category.projectTypeId === selectedType
       );
       setAvailableCategories(categories);
+      
+      // Reset the selected category if it's no longer available
       if (selectedCategory) {
         const categoryExists = categories.some(c => c.id === selectedCategory);
         if (!categoryExists) {
@@ -72,9 +105,9 @@ const Index = () => {
         }
       }
     } else {
-      setAvailableCategories(sampleProjectCategories);
+      setAvailableCategories(projectCategories);
     }
-  }, [selectedType, selectedCategory]);
+  }, [selectedType, selectedCategory, projectCategories]);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -88,26 +121,26 @@ const Index = () => {
     setIsFormOpen(false);
   };
 
-  const handleSaveProject = (data: Project) => {
-    const existingIndex = projects.findIndex((p) => p.id === data.id);
-    
-    if (existingIndex >= 0) {
-      const updatedProjects = [...projects];
-      updatedProjects[existingIndex] = data;
-      setProjects(updatedProjects);
+  const handleSaveProject = async (data: Project) => {
+    try {
+      const result = await addProjectToDb(data);
+      
+      if (result) {
+        toast({
+          title: "Project added",
+          description: `${data.name} has been added successfully.`,
+        });
+        setIsFormOpen(false);
+        refetchProjects();
+      }
+    } catch (error) {
+      console.error("Error saving project:", error);
       toast({
-        title: "Project updated",
-        description: `${data.name} has been updated successfully.`,
-      });
-    } else {
-      setProjects([data, ...projects]);
-      toast({
-        title: "Project added",
-        description: `${data.name} has been added successfully.`,
+        title: "Error saving project",
+        description: "An unexpected error occurred while saving the project.",
+        variant: "destructive"
       });
     }
-    
-    setIsFormOpen(false);
   };
 
   const toggleFilter = () => {
@@ -118,6 +151,45 @@ const Index = () => {
     setSelectedType(undefined);
     setSelectedCategory(undefined);
   };
+
+  // Show loading state
+  if (isLoadingProjects || isLoadingTypes || isLoadingCategories) {
+    return (
+      <Dashboard>
+        <PageTransition>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h3 className="text-lg font-medium mb-2">Loading projects...</h3>
+              <p className="text-muted-foreground">Please wait while we fetch your data.</p>
+            </div>
+          </div>
+        </PageTransition>
+      </Dashboard>
+    );
+  }
+
+  // Show error state
+  if (isProjectsError) {
+    return (
+      <Dashboard>
+        <PageTransition>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h3 className="text-lg font-medium mb-2 text-destructive">Error loading projects</h3>
+              <p className="text-muted-foreground">There was an error fetching your projects.</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => refetchProjects()}
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </PageTransition>
+      </Dashboard>
+    );
+  }
 
   return (
     <Dashboard>
@@ -164,7 +236,7 @@ const Index = () => {
                         <SelectValue placeholder="Select a type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {sampleProjectTypes.map((type) => (
+                        {projectTypes.map((type) => (
                           <SelectItem key={type.id} value={type.id}>
                             {type.name}
                           </SelectItem>
