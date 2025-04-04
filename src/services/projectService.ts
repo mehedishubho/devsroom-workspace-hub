@@ -105,13 +105,13 @@ export async function getProjects(): Promise<Project[]> {
 
         const mappedProject = mapProjectFromDb(project, client, projectCredentials);
 
-        // Add payments
+        // Add payments - we should consider status as "completed" by default if not specified
         mappedProject.payments = projectPayments.map(payment => ({
           id: payment.id,
           amount: payment.amount,
           date: new Date(payment.payment_date),
           description: payment.description || '',
-          status: payment.status || 'completed' 
+          status: 'completed' // Default to completed since status isn't in the database
         }));
 
         return mappedProject;
@@ -170,13 +170,13 @@ export async function getProjectById(id: string): Promise<Project | null> {
     // Map the project with its related data
     const mappedProject = mapProjectFromDb(project, client, credentials);
 
-    // Add payments
+    // Add payments - with default status of completed
     mappedProject.payments = payments.map(payment => ({
       id: payment.id,
       amount: payment.amount,
       date: new Date(payment.payment_date),
       description: payment.description || '',
-      status: payment.status || 'completed'
+      status: 'completed' // Default to completed since there's no status in the database
     }));
 
     return mappedProject;
@@ -262,7 +262,7 @@ export async function addProject(projectData: ProjectFormData): Promise<Project 
         amount: payment.amount,
         payment_date: payment.date.toISOString(),
         description: payment.description,
-        status: payment.status
+        // Note: We're not sending the status to the database since it doesn't have a status field
       }));
 
       const { error: paymentsError } = await supabase
@@ -401,7 +401,7 @@ export async function updateProject(id: string, projectData: Partial<ProjectForm
           amount: payment.amount,
           payment_date: payment.date.toISOString(),
           description: payment.description,
-          status: payment.status
+          // No status field in the database
         }));
 
         const { error: paymentsError } = await supabase
@@ -459,7 +459,7 @@ export async function addPayment(
         amount: payment.amount,
         payment_date: payment.date.toISOString(),
         description: payment.description,
-        status: payment.status
+        // No status field in the database
       })
       .select()
       .single();
@@ -471,7 +471,7 @@ export async function addPayment(
       amount: data.amount,
       date: new Date(data.payment_date),
       description: data.description || '',
-      status: data.status || 'completed'
+      status: 'completed' // Default to completed
     };
   } catch (error) {
     console.error('Error in addPayment:', error);

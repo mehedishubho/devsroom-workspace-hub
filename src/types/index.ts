@@ -4,7 +4,7 @@ export interface Payment {
   amount: number;
   date: Date;
   description?: string;
-  status: 'pending' | 'completed';
+  status?: 'pending' | 'completed';
 }
 
 export interface Credential {
