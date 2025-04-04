@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -16,9 +17,9 @@ interface User {
   name: string;
 }
 
-// Mock admin credentials - in a real app, this would be in your backend
-const ADMIN_EMAIL = "admin@example.com";
-const ADMIN_PASSWORD = "admin123";
+// Admin credentials - configured to match the database user
+const ADMIN_EMAIL = "mehedihassanshubho@gmail.com";
+const ADMIN_PASSWORD = "125524429056MEHEDI";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
