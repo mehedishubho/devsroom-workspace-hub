@@ -7,7 +7,7 @@ export async function getClients(): Promise<Client[]> {
   try {
     const { data, error } = await supabase
       .from('clients')
-      .select('*, companies(name)')
+      .select('*')
       .order('name');
 
     if (error) {
@@ -26,7 +26,7 @@ export async function getClients(): Promise<Client[]> {
       zipCode: client.zip_code || undefined,
       country: client.country || undefined,
       companyId: client.company_id || undefined,
-      companyName: client.companies?.name || undefined,
+      companyName: undefined, // Will be populated later if needed
       createdAt: new Date(client.created_at),
       updatedAt: new Date(client.updated_at)
     }));
@@ -45,7 +45,7 @@ export async function getClientById(id: string): Promise<Client | null> {
   try {
     const { data, error } = await supabase
       .from('clients')
-      .select('*, companies(name)')
+      .select('*')
       .eq('id', id)
       .maybeSingle();
 
@@ -55,6 +55,20 @@ export async function getClientById(id: string): Promise<Client | null> {
     }
 
     if (!data) return null;
+
+    // Fetch company name if companyId exists
+    let companyName;
+    if (data.company_id) {
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', data.company_id)
+        .single();
+
+      if (!companyError && companyData) {
+        companyName = companyData.name;
+      }
+    }
 
     return {
       id: data.id,
@@ -67,7 +81,7 @@ export async function getClientById(id: string): Promise<Client | null> {
       zipCode: data.zip_code || undefined,
       country: data.country || undefined,
       companyId: data.company_id || undefined,
-      companyName: data.companies?.name || undefined,
+      companyName,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -86,13 +100,24 @@ export async function getClientsByCompanyId(companyId: string): Promise<Client[]
   try {
     const { data, error } = await supabase
       .from('clients')
-      .select('*, companies(name)')
+      .select('*')
       .eq('company_id', companyId)
       .order('name');
 
     if (error) {
       console.error('Error fetching clients by company:', error);
       throw error;
+    }
+
+    const { data: companyData, error: companyError } = await supabase
+      .from('companies')
+      .select('name')
+      .eq('id', companyId)
+      .single();
+
+    let companyName = undefined;
+    if (!companyError && companyData) {
+      companyName = companyData.name;
     }
 
     return data.map(client => ({
@@ -106,7 +131,7 @@ export async function getClientsByCompanyId(companyId: string): Promise<Client[]
       zipCode: client.zip_code || undefined,
       country: client.country || undefined,
       companyId: client.company_id || undefined,
-      companyName: client.companies?.name || undefined,
+      companyName,
       createdAt: new Date(client.created_at),
       updatedAt: new Date(client.updated_at)
     }));
@@ -148,12 +173,26 @@ export async function createClient(clientData: CreateClientData): Promise<Client
         country: clientData.country || null,
         company_id: clientData.companyId
       })
-      .select('*, companies(name)')
+      .select()
       .single();
 
     if (error) {
       console.error('Error creating client:', error);
       throw error;
+    }
+
+    // Fetch company name
+    let companyName;
+    if (data.company_id) {
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', data.company_id)
+        .single();
+
+      if (!companyError && companyData) {
+        companyName = companyData.name;
+      }
     }
 
     return {
@@ -167,7 +206,7 @@ export async function createClient(clientData: CreateClientData): Promise<Client
       zipCode: data.zip_code || undefined,
       country: data.country || undefined,
       companyId: data.company_id || undefined,
-      companyName: data.companies?.name || undefined,
+      companyName,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -203,12 +242,26 @@ export async function updateClient(
       .from('clients')
       .update(updateData)
       .eq('id', id)
-      .select('*, companies(name)')
+      .select()
       .single();
 
     if (error) {
       console.error('Error updating client:', error);
       throw error;
+    }
+
+    // Fetch company name
+    let companyName;
+    if (data.company_id) {
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', data.company_id)
+        .single();
+
+      if (!companyError && companyData) {
+        companyName = companyData.name;
+      }
     }
 
     return {
@@ -222,7 +275,7 @@ export async function updateClient(
       zipCode: data.zip_code || undefined,
       country: data.country || undefined,
       companyId: data.company_id || undefined,
-      companyName: data.companies?.name || undefined,
+      companyName,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };

@@ -13,14 +13,14 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import AppLogo from "@/components/ui-custom/AppLogo";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Navbar = () => {
   const { isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // If not authenticated, show minimal navbar
@@ -29,7 +29,7 @@ const Navbar = () => {
       <nav className="fixed top-0 left-0 right-0 h-16 px-4 bg-background/80 backdrop-blur-md border-b border-border z-30">
         <div className="container max-w-7xl mx-auto h-full flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <AppLogo size={32} />
+            <AppLogo />
             <span className="font-semibold text-xl hidden sm:inline-block">Devsroom</span>
           </Link>
         </div>
@@ -51,7 +51,7 @@ const Navbar = () => {
       <nav className="fixed top-0 left-0 right-0 h-16 px-4 bg-background/80 backdrop-blur-md border-b border-border z-30">
         <div className="container max-w-7xl mx-auto h-full flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <AppLogo size={32} />
+            <AppLogo />
             <span className="font-semibold text-xl">Devsroom</span>
           </Link>
 
@@ -128,7 +128,7 @@ const Navbar = () => {
       <div className="container max-w-7xl mx-auto h-full flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2">
-            <AppLogo size={32} />
+            <AppLogo />
             <span className="font-semibold text-xl">Devsroom</span>
           </Link>
 
