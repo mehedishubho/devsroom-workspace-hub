@@ -43,11 +43,25 @@ export interface ProjectCategory {
   updatedAt?: Date;
 }
 
+export interface Company {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Client {
   id: string;
   name: string;
   email: string;
   phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  companyId?: string;
+  companyName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -100,4 +114,14 @@ export interface InvoiceItem {
   quantity: number;
   unitPrice: number;
   amount: number;
+}
+
+export interface DashboardStats {
+  totalProjects: number;
+  activeProjects: number;
+  completedProjects: number;
+  totalClients: number;
+  totalRevenue: number;
+  paidRevenue: number;
+  unpaidRevenue: number;
 }

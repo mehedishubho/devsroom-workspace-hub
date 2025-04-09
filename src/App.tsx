@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import Projects from "./pages/Projects";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import ProjectDetails from "./pages/ProjectDetails";
@@ -14,6 +16,7 @@ import AccountSettings from "./pages/AccountSettings";
 import Clients from "./pages/Clients";
 import ClientDetails from "./pages/ClientDetails";
 import ProjectSettings from "./pages/ProjectSettings";
+import Companies from "./pages/Companies";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +31,12 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={
               <ProtectedRoute>
-                <Index />
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute>
+                <Projects />
               </ProtectedRoute>
             } />
             <Route path="/project/:projectId" element={
@@ -49,6 +57,11 @@ const App = () => (
             <Route path="/clients/:clientId" element={
               <ProtectedRoute>
                 <ClientDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/companies" element={
+              <ProtectedRoute>
+                <Companies />
               </ProtectedRoute>
             } />
             <Route path="/project-settings" element={
