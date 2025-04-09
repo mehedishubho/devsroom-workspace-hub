@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Building, ChevronDown, Clipboard, Home, LogOut, Menu, Settings, User, Users } from "lucide-react";
@@ -28,9 +27,8 @@ const Navbar = () => {
     return (
       <nav className="fixed top-0 left-0 right-0 h-16 px-4 bg-background/80 backdrop-blur-md border-b border-border z-30">
         <div className="container max-w-7xl mx-auto h-full flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center">
             <AppLogo />
-            <span className="font-semibold text-xl hidden sm:inline-block">Devsroom</span>
           </Link>
         </div>
       </nav>
@@ -50,9 +48,8 @@ const Navbar = () => {
     return (
       <nav className="fixed top-0 left-0 right-0 h-16 px-4 bg-background/80 backdrop-blur-md border-b border-border z-30">
         <div className="container max-w-7xl mx-auto h-full flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center">
             <AppLogo />
-            <span className="font-semibold text-xl">Devsroom</span>
           </Link>
 
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -127,9 +124,8 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 h-16 px-4 bg-background/80 backdrop-blur-md border-b border-border z-30">
       <div className="container max-w-7xl mx-auto h-full flex items-center justify-between">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center">
             <AppLogo />
-            <span className="font-semibold text-xl">Devsroom</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-1">
