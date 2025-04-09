@@ -5,7 +5,7 @@ const AppLogo: React.FC = () => {
   return (
     <div className="flex items-center gap-2">
       <img 
-        src="/logo.png" 
+        src="/lovable-uploads/88fcb074-6ed0-4626-9475-0d9454ffbad9.png" 
         alt="Devsroom Workspace" 
         className="h-7 w-auto"
       />
