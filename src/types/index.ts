@@ -5,6 +5,7 @@ export interface Payment {
   date: Date;
   description?: string;
   status?: 'pending' | 'completed';
+  currency?: string;
 }
 
 export interface Credential {
@@ -80,7 +81,7 @@ export interface Project {
   endDate?: Date;
   price: number;
   payments: Payment[];
-  status: 'active' | 'completed' | 'on-hold' | 'cancelled';
+  status: 'active' | 'completed' | 'on-hold' | 'cancelled' | 'under-revision';
   projectTypeId?: string;
   projectCategoryId?: string;
   notes?: string;
@@ -124,4 +125,15 @@ export interface DashboardStats {
   totalRevenue: number;
   paidRevenue: number;
   unpaidRevenue: number;
+}
+
+export interface Currency {
+  code: string;
+  name: string;
+  symbol: string;
+}
+
+export interface PaymentWithCurrency extends Payment {
+  currency: string;
+  convertedAmount?: number; // Amount converted to base currency for calculation
 }

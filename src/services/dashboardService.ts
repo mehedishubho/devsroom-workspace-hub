@@ -1,7 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats } from "@/types";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { convertCurrency } from "@/utils/currency";
+
+// Get toast function from hook
+const { toast } = useToast();
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   try {
@@ -25,10 +29,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       throw clientsError;
     }
 
-    // Get payments data
+    // Get payments data with currency
     const { data: paymentsData, error: paymentsError } = await supabase
       .from('payments')
-      .select('amount');
+      .select('amount, currency');
 
     if (paymentsError) {
       console.error('Error fetching payments:', paymentsError);
@@ -43,8 +47,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const totalRevenue = projectsData.reduce((sum, project) => 
       sum + (project.budget || 0), 0);
     
-    const paidRevenue = paymentsData.reduce((sum, payment) => 
-      sum + payment.amount, 0);
+    // Convert all payments to USD for consistent calculation
+    const paidRevenue = paymentsData.reduce((sum, payment) => {
+      const amount = payment.amount || 0;
+      const currency = payment.currency || 'USD';
+      
+      // Convert to USD if needed
+      const amountInUsd = convertCurrency(amount, currency, 'USD');
+      return sum + amountInUsd;
+    }, 0);
     
     const unpaidRevenue = totalRevenue - paidRevenue;
 

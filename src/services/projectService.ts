@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Project, Payment, Credential, Hosting, OtherAccess, ProjectFormData } from "@/types";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 // Helper function to convert database format to our application format
 const mapProjectFromDb = (project, client, credentials): Project => {
@@ -42,7 +42,7 @@ const mapProjectFromDb = (project, client, credentials): Project => {
     endDate: project.deadline_date ? new Date(project.deadline_date) : undefined,
     price: project.budget || 0,
     payments: [], // To be filled by a separate query
-    status: project.status as 'active' | 'completed' | 'on-hold' | 'cancelled',
+    status: project.status as 'active' | 'completed' | 'on-hold' | 'cancelled' | 'under-revision',
     projectTypeId: project.project_type_id,
     projectCategoryId: project.project_category_id,
     notes: project.description,
@@ -64,6 +64,9 @@ const mapCredentialTypeToAccessType = (platform: string): 'email' | 'ftp' | 'ssh
   
   return mapping[platform] || 'other';
 };
+
+// Get toast function from hook
+const { toast } = useToast();
 
 export async function getProjects(): Promise<Project[]> {
   try {
@@ -111,6 +114,7 @@ export async function getProjects(): Promise<Project[]> {
           amount: payment.amount,
           date: new Date(payment.payment_date),
           description: payment.description || '',
+          currency: payment.currency || 'USD',
           status: 'completed' // Default to completed since status isn't in the database
         }));
 
@@ -176,6 +180,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
       amount: payment.amount,
       date: new Date(payment.payment_date),
       description: payment.description || '',
+      currency: payment.currency || 'USD',
       status: 'completed' // Default to completed since there's no status in the database
     }));
 
@@ -262,6 +267,7 @@ export async function addProject(projectData: ProjectFormData): Promise<Project 
         amount: payment.amount,
         payment_date: payment.date.toISOString(),
         description: payment.description,
+        currency: payment.currency || 'USD',
         // Note: We're not sending the status to the database since it doesn't have a status field
       }));
 
@@ -401,6 +407,7 @@ export async function updateProject(id: string, projectData: Partial<ProjectForm
           amount: payment.amount,
           payment_date: payment.date.toISOString(),
           description: payment.description,
+          currency: payment.currency || 'USD',
           // No status field in the database
         }));
 
@@ -459,6 +466,7 @@ export async function addPayment(
         amount: payment.amount,
         payment_date: payment.date.toISOString(),
         description: payment.description,
+        currency: payment.currency || 'USD',
         // No status field in the database
       })
       .select()
@@ -471,6 +479,7 @@ export async function addPayment(
       amount: data.amount,
       date: new Date(data.payment_date),
       description: data.description || '',
+      currency: data.currency || 'USD',
       status: 'completed' // Default to completed
     };
   } catch (error) {

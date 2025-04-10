@@ -67,7 +67,7 @@ const Navbar = () => {
                     variant="ghost"
                     className={cn(
                       "justify-start gap-2",
-                      location.pathname === item.href && "bg-[#626eff]/10 text-[#626eff]"
+                      location.pathname === item.href && "bg-primary/10 text-primary"
                     )}
                     onClick={() => {
                       navigate(item.href);
@@ -124,21 +124,21 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 h-16 px-4 bg-background/80 backdrop-blur-md border-b border-border z-30">
       <div className="container max-w-7xl mx-auto h-full flex items-center">
-        <div className="flex-1">
+        <div className="flex-1 flex justify-start">
           <Link to="/" className="flex items-center">
             <AppLogo />
           </Link>
         </div>
 
-        <div className="flex-1 flex justify-center items-center gap-1">
+        <div className="flex-auto flex justify-center items-center gap-1">
           {navItems.map((item) => (
             <Button
               key={item.href}
               variant="ghost"
               asChild
               className={cn(
-                "gap-2 hover:text-[#626eff] hover:bg-[#626eff]/10",
-                location.pathname === item.href && "bg-[#626eff]/10 text-[#626eff]"
+                "gap-2 hover:text-primary hover:bg-primary/10",
+                location.pathname === item.href && "bg-primary/10 text-primary"
               )}
             >
               <Link to={item.href}>
@@ -152,18 +152,18 @@ const Navbar = () => {
         <div className="flex-1 flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2 hover:text-[#626eff] hover:bg-[#626eff]/10">
+              <Button variant="ghost" className="gap-2 hover:text-primary hover:bg-primary/10">
                 <User className="h-4 w-4" />
                 Account
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate("/account")} className="hover:text-[#626eff] hover:bg-[#626eff]/10">
+            <DropdownMenuContent align="end" className="bg-background border shadow-md">
+              <DropdownMenuItem onClick={() => navigate("/account")} className="hover:text-primary hover:bg-primary/10">
                 <User className="h-4 w-4 mr-2" />
                 My Account
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/project-settings")} className="hover:text-[#626eff] hover:bg-[#626eff]/10">
+              <DropdownMenuItem onClick={() => navigate("/project-settings")} className="hover:text-primary hover:bg-primary/10">
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </DropdownMenuItem>

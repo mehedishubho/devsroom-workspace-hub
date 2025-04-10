@@ -42,6 +42,7 @@ import {
   Save 
 } from "lucide-react";
 import { Client, Project } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 const ClientDetails = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -60,27 +61,116 @@ const ClientDetails = () => {
   const [phone, setPhone] = useState("");
 
   useEffect(() => {
-    if (!clientId) return;
-    
-    const fetchedClient = getClientById(clientId);
-    if (fetchedClient) {
-      setClient(fetchedClient);
-      setName(fetchedClient.name);
-      setEmail(fetchedClient.email);
-      setPhone(fetchedClient.phone || "");
-      
-      const clientProjects = getProjectsByClientId(clientId);
-      setProjects(clientProjects);
-    } else {
-      toast({
-        title: "Client not found",
-        description: "Could not find the requested client",
-        variant: "destructive",
-      });
-      navigate("/clients");
+    if (!clientId) {
+      setIsLoading(false);
+      return;
     }
     
-    setIsLoading(false);
+    const fetchClientData = async () => {
+      try {
+        // First try to fetch from Supabase
+        const { data: supabaseClient, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', clientId)
+          .maybeSingle();
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (supabaseClient) {
+          // Convert Supabase client to our Client format
+          const clientData: Client = {
+            id: supabaseClient.id,
+            name: supabaseClient.name,
+            email: supabaseClient.email,
+            phone: supabaseClient.phone || "",
+            address: supabaseClient.address,
+            city: supabaseClient.city,
+            state: supabaseClient.state,
+            zipCode: supabaseClient.zip_code,
+            country: supabaseClient.country,
+            companyId: supabaseClient.company_id,
+            createdAt: new Date(supabaseClient.created_at),
+            updatedAt: new Date(supabaseClient.updated_at)
+          };
+          
+          setClient(clientData);
+          setName(clientData.name);
+          setEmail(clientData.email);
+          setPhone(clientData.phone || "");
+          
+          // Fetch client's projects
+          const { data: projectsData, error: projectsError } = await supabase
+            .from('projects')
+            .select('*')
+            .eq('client_id', clientId);
+            
+          if (projectsError) throw projectsError;
+          
+          if (projectsData && projectsData.length > 0) {
+            // Fetch client name for each project
+            const formattedProjects = projectsData.map(project => ({
+              id: project.id,
+              name: project.name,
+              clientId: project.client_id,
+              clientName: clientData.name,
+              description: project.description || "",
+              url: "",
+              credentials: { username: "", password: "" },
+              hosting: { provider: "", credentials: { username: "", password: "" } },
+              otherAccess: [],
+              startDate: new Date(project.start_date),
+              endDate: project.deadline_date ? new Date(project.deadline_date) : undefined,
+              price: project.budget || 0,
+              payments: [],
+              status: project.status,
+              projectTypeId: project.project_type_id,
+              projectCategoryId: project.project_category_id,
+              notes: project.description,
+              createdAt: new Date(project.created_at),
+              updatedAt: new Date(project.updated_at)
+            }));
+            
+            setProjects(formattedProjects);
+          } else {
+            setProjects([]);
+          }
+        } else {
+          // Fallback to local data if not found in Supabase
+          const fetchedClient = getClientById(clientId);
+          if (fetchedClient) {
+            setClient(fetchedClient);
+            setName(fetchedClient.name);
+            setEmail(fetchedClient.email);
+            setPhone(fetchedClient.phone || "");
+            
+            const clientProjects = getProjectsByClientId(clientId);
+            setProjects(clientProjects);
+          } else {
+            toast({
+              title: "Client not found",
+              description: "Could not find the requested client",
+              variant: "destructive",
+            });
+            navigate("/clients");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching client:", error);
+        toast({
+          title: "Error loading client",
+          description: "There was a problem loading the client details",
+          variant: "destructive",
+        });
+        navigate("/clients");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchClientData();
   }, [clientId, navigate, toast]);
 
   const handleBack = () => {
@@ -96,7 +186,7 @@ const ClientDetails = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!client || !clientId) return;
     
     if (!name.trim() || !email.trim()) {
@@ -108,21 +198,68 @@ const ClientDetails = () => {
       return;
     }
     
-    const updatedClient = updateClient(clientId, {
-      name,
-      email,
-      phone
-    });
-    
-    if (updatedClient) {
-      setClient(updatedClient);
-      setIsEditDialogOpen(false);
+    try {
+      // Try to update in Supabase first
+      const { data: updatedClient, error } = await supabase
+        .from('clients')
+        .update({ 
+          name, 
+          email, 
+          phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', clientId)
+        .select()
+        .single();
+        
+      if (error) throw error;
       
-      toast({
-        title: "Client updated",
-        description: "Client information has been saved successfully"
-      });
-    } else {
+      if (updatedClient) {
+        // Convert to our Client format
+        const clientData: Client = {
+          id: updatedClient.id,
+          name: updatedClient.name,
+          email: updatedClient.email,
+          phone: updatedClient.phone || "",
+          address: updatedClient.address,
+          city: updatedClient.city,
+          state: updatedClient.state,
+          zipCode: updatedClient.zip_code,
+          country: updatedClient.country,
+          companyId: updatedClient.company_id,
+          createdAt: new Date(updatedClient.created_at),
+          updatedAt: new Date(updatedClient.updated_at)
+        };
+        
+        setClient(clientData);
+        setIsEditDialogOpen(false);
+        
+        toast({
+          title: "Client updated",
+          description: "Client information has been saved successfully"
+        });
+      } else {
+        // Fallback to local update
+        const localUpdatedClient = updateClient(clientId, {
+          name,
+          email,
+          phone
+        });
+        
+        if (localUpdatedClient) {
+          setClient(localUpdatedClient);
+          setIsEditDialogOpen(false);
+          
+          toast({
+            title: "Client updated",
+            description: "Client information has been saved successfully"
+          });
+        } else {
+          throw new Error("Failed to update client");
+        }
+      }
+    } catch (error) {
+      console.error("Error updating client:", error);
       toast({
         title: "Error",
         description: "Could not update client information",
@@ -135,24 +272,43 @@ const ClientDetails = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!clientId) return;
     
-    const success = deleteClient(clientId);
-    
-    if (success) {
+    try {
+      // Try to delete from Supabase
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId);
+        
+      if (error) throw error;
+      
       toast({
         title: "Client deleted",
         description: "The client has been removed successfully"
       });
       navigate("/clients");
-    } else {
-      toast({
-        title: "Error",
-        description: "Could not delete the client",
-        variant: "destructive"
-      });
-      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      
+      // Fallback to local delete
+      const success = deleteClient(clientId);
+      
+      if (success) {
+        toast({
+          title: "Client deleted",
+          description: "The client has been removed successfully"
+        });
+        navigate("/clients");
+      } else {
+        toast({
+          title: "Error",
+          description: "Could not delete the client",
+          variant: "destructive"
+        });
+        setIsDeleteDialogOpen(false);
+      }
     }
   };
 
@@ -168,7 +324,21 @@ const ClientDetails = () => {
   }
 
   if (!client) {
-    return null;
+    return (
+      <Dashboard>
+        <div className="flex flex-col items-center justify-center h-96">
+          <h3 className="text-xl font-semibold text-destructive">Client not found</h3>
+          <p className="mt-2 text-muted-foreground">The requested client could not be found</p>
+          <Button 
+            variant="outline" 
+            onClick={handleBack} 
+            className="mt-4"
+          >
+            Back to Clients
+          </Button>
+        </div>
+      </Dashboard>
+    );
   }
 
   return (
