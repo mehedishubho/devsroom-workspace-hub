@@ -14,7 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 4%;
 
-    --primary: 240 6% 10%;
+    /* Updated primary color to #626eff */
+    --primary: 231 100% 69%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 5% 96%;
@@ -46,7 +47,8 @@
     --popover: 240 10% 4%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 0 0% 100%;
+    /* Updated primary color to #626eff in dark mode */
+    --primary: 231 100% 69%;
     --primary-foreground: 240 6% 10%;
 
     --secondary: 240 4% 12%;
