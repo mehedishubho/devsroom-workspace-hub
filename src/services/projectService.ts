@@ -1,7 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Project, Payment, Credential, Hosting, OtherAccess, ProjectFormData } from "@/types";
-import { useToast } from "@/hooks/use-toast";
+import { getToastFunction } from "@/hooks/use-toast";
 
 // Helper function to convert database format to our application format
 const mapProjectFromDb = (project, client, credentials): Project => {
@@ -65,13 +64,8 @@ const mapCredentialTypeToAccessType = (platform: string): 'email' | 'ftp' | 'ssh
   return mapping[platform] || 'other';
 };
 
-// Get toast function from hook
-const getToast = () => {
-  return { toast: (args) => console.log('Toast:', args) };
-};
-
 export async function getProjects(): Promise<Project[]> {
-  const { toast } = getToast();
+  const { toast } = getToastFunction();
   
   try {
     // First, get all projects
@@ -129,7 +123,7 @@ export async function getProjects(): Promise<Project[]> {
     return mappedProjects;
   } catch (error) {
     console.error('Error in getProjects:', error);
-    const { toast } = getToast();
+    const { toast } = getToastFunction();
     toast({
       title: "Error fetching projects",
       description: error.message || "An unexpected error occurred",
@@ -140,7 +134,7 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
-  const { toast } = getToast();
+  const { toast } = getToastFunction();
   
   try {
     // Get the project
@@ -204,7 +198,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
 }
 
 export async function addProject(projectData: ProjectFormData): Promise<Project | null> {
-  const { toast } = getToast();
+  const { toast } = getToastFunction();
   
   try {
     // Start a transaction
@@ -301,7 +295,7 @@ export async function addProject(projectData: ProjectFormData): Promise<Project 
 }
 
 export async function updateProject(id: string, projectData: Partial<ProjectFormData>): Promise<Project | null> {
-  const { toast } = getToast();
+  const { toast } = getToastFunction();
   
   try {
     // Update the main project
@@ -444,7 +438,7 @@ export async function updateProject(id: string, projectData: Partial<ProjectForm
 }
 
 export async function deleteProject(id: string): Promise<boolean> {
-  const { toast } = getToast();
+  const { toast } = getToastFunction();
   
   try {
     // Delete the project (cascading should handle related records)
@@ -471,7 +465,7 @@ export async function addPayment(
   projectId: string, 
   payment: Omit<Payment, 'id'>
 ): Promise<Payment | null> {
-  const { toast } = getToast();
+  const { toast } = getToastFunction();
   
   try {
     const { data, error } = await supabase

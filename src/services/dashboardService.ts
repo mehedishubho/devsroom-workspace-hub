@@ -1,17 +1,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats } from "@/types";
-import { useToast } from "@/hooks/use-toast";
+import { getToastFunction } from "@/hooks/use-toast";
 import { convertCurrency } from "@/utils/currency";
-
-// Create a function to get toast outside React components
-const getToast = () => {
-  return { toast: (args) => console.log('Toast:', args) };
-};
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   // Get toast function
-  const toast = getToast().toast;
+  const { toast } = getToastFunction();
   
   try {
     // Get projects count by status

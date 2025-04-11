@@ -29,17 +29,18 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { sampleClients, addClient } from "@/data/clients";
-import { addProject, updateProject } from "@/data/projects";
+import { addProject, updateProject } from "@/services/projectService";
 import { Client, Project, Payment, OtherAccess } from "@/types";
 import ProjectTypeSelector from "@/components/ui-custom/ProjectTypeSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { v4 as uuidv4 } from 'uuid';
+import CurrencySelector from "@/components/ui-custom/CurrencySelector";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-// Type for the allowed project statuses
-type ProjectStatus = "active" | "completed" | "on-hold" | "cancelled" | "planning" | "in-progress" | "review";
+type ProjectStatus = "active" | "completed" | "on-hold" | "cancelled" | "under-revision" | "planning" | "in-progress" | "review";
 
 const formSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -62,7 +63,6 @@ const formSchema = z.object({
   hostingNotes: z.string().optional(),
 });
 
-// Define the props interface for the ProjectForm component
 export interface ProjectFormProps {
   initialData?: Project;
   onSubmit?: (project: Project) => void;
@@ -74,7 +74,7 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   const location = useLocation();
   const { state } = location;
   
-  const [clients, setClients] = useState<Client[]>(sampleClients);
+  const [clients, setClients] = useState<Client[]>([]);
   const [newClient, setNewClient] = useState("");
   const [showNewClientInput, setShowNewClientInput] = useState(false);
   const [selectedTypeId, setSelectedTypeId] = useState(initialData?.projectTypeId || "");
@@ -106,7 +106,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   });
 
   useEffect(() => {
-    // If client ID was passed in state, set it
     if (state?.clientId) {
       form.setValue("clientId", state.clientId);
     }
@@ -114,18 +113,16 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
 
   const handleSubmitForm = (values: z.infer<typeof formSchema>) => {
     try {
-      // If new client was entered, create it
       let clientId = values.clientId;
       if (clientId === "new" && newClient) {
         const client = addClient({
           name: newClient,
-          email: `contact@${newClient.toLowerCase().replace(/\s+/g, "")}.com`, // Generate placeholder email
+          email: `contact@${newClient.toLowerCase().replace(/\s+/g, "")}.com`,
         });
         clientId = client.id;
-        setClients([...sampleClients]); // Refresh clients list
+        setClients([...sampleClients]);
       }
 
-      // Convert the form status to a valid Project status type
       const projectStatus = mapFormStatusToProjectStatus(values.projectStatus);
 
       const projectData = {
@@ -161,12 +158,10 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       };
 
       if (initialData) {
-        // Update existing project
         if (onSubmit) {
           onSubmit(projectData as Project);
         }
       } else {
-        // Create new project
         const project = addProject(projectData);
         
         if (onSubmit) {
@@ -182,7 +177,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     }
   };
 
-  // Helper function to map form status values to valid Project status types
   const mapFormStatusToProjectStatus = (formStatus: string): Project['status'] => {
     switch (formStatus) {
       case "completed":
@@ -191,11 +185,13 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         return "on-hold";
       case "cancelled":
         return "cancelled";
+      case "under-revision":
+        return "under-revision";
       case "planning":
       case "in-progress":
       case "review":
       default:
-        return "active"; // Default to active for any other status
+        return "active";
     }
   };
 
@@ -221,7 +217,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     }
   };
 
-  // Payment handling functions
   const addPayment = () => {
     const newPayment: Payment = {
       id: uuidv4(),
@@ -246,7 +241,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     }));
   };
 
-  // Other access handling functions
   const addOtherAccess = () => {
     const newAccess: OtherAccess = {
       id: uuidv4(),
@@ -488,6 +482,8 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                         <SelectItem value="review">Review</SelectItem>
                         <SelectItem value="completed">Completed</SelectItem>
                         <SelectItem value="on-hold">On Hold</SelectItem>
+                        <SelectItem value="under-revision">Under Revision</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -762,22 +758,30 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                       </Button>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="text-sm font-medium">Amount</label>
                         <Input 
                           type="number"
                           placeholder="Payment amount"
                           value={payment.amount}
-                          onChange={(e) => updatePayment(payment.id, "amount", parseFloat(e.target.value) || 0)}
+                          onChange={(e) => updatePayment(payment.id, 'amount', parseFloat(e.target.value) || 0)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Currency</label>
+                        <CurrencySelector
+                          value={payment.currency || 'USD'}
+                          onChange={(value) => updatePayment(payment.id, 'currency', value)}
                         />
                       </div>
                       
                       <div>
                         <label className="text-sm font-medium">Status</label>
-                        <Select 
-                          value={payment.status}
-                          onValueChange={(value) => updatePayment(payment.id, "status", value)}
+                        <Select
+                          value={payment.status || 'pending'}
+                          onValueChange={(value) => updatePayment(payment.id, 'status', value)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select status" />
@@ -790,36 +794,48 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                       </div>
                     </div>
                     
-                    <div className="mt-4">
-                      <label className="text-sm font-medium">Date</label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            {format(payment.date, "PPP")}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={new Date(payment.date)}
-                            onSelect={(date) => updatePayment(payment.id, "date", date || new Date())}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    
-                    <div className="mt-4">
-                      <label className="text-sm font-medium">Description</label>
-                      <Input 
-                        placeholder="e.g. Initial payment, Final payment"
-                        value={payment.description || ""}
-                        onChange={(e) => updatePayment(payment.id, "description", e.target.value)}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="text-sm font-medium">Description</label>
+                        <Input 
+                          placeholder="Payment description"
+                          value={payment.description || ''}
+                          onChange={(e) => updatePayment(payment.id, 'description', e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Date</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !payment.date && "text-muted-foreground"
+                              )}
+                            >
+                              {payment.date ? (
+                                format(payment.date, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={payment.date}
+                              onSelect={(date) => date && updatePayment(payment.id, 'date', date)}
+                              disabled={(date) =>
+                                date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -828,15 +844,17 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
           </TabsContent>
         </Tabs>
 
-        <div className="flex gap-4 pt-4 justify-end">
-          <Button
-            type="button"
-            variant="outline"
+        <div className="flex justify-end space-x-4 pt-8 border-t">
+          <Button 
+            type="button" 
+            variant="outline" 
             onClick={handleCancel}
           >
             Cancel
           </Button>
-          <Button type="submit">{initialData ? 'Update Project' : 'Create Project'}</Button>
+          <Button type="submit">
+            {initialData ? "Update Project" : "Create Project"}
+          </Button>
         </div>
       </form>
     </Form>
