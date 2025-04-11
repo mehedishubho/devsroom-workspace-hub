@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectType, ProjectCategory } from "@/types";
-import { toast } from "@/hooks/use-toast";
+import { simplifiedToast } from "@/hooks/use-toast";
 
 export const getProjectTypes = async (): Promise<ProjectType[]> => {
   try {
@@ -20,7 +20,7 @@ export const getProjectTypes = async (): Promise<ProjectType[]> => {
     }));
   } catch (error) {
     console.error('Error fetching project types:', error);
-    toast.error("Failed to fetch project types. Please try again.");
+    simplifiedToast.error("Failed to fetch project types. Please try again.");
     return [];
   }
 };
@@ -43,7 +43,7 @@ export const getProjectCategories = async (): Promise<ProjectCategory[]> => {
     }));
   } catch (error) {
     console.error('Error fetching project categories:', error);
-    toast.error("Failed to fetch project categories. Please try again.");
+    simplifiedToast.error("Failed to fetch project categories. Please try again.");
     return [];
   }
 };

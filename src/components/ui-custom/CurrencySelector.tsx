@@ -43,7 +43,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
 
   // Safe handler for currency selection
   const handleSelect = (currentValue: string) => {
-    if (!currentValue || typeof currentValue !== 'string') return; // Enhanced safety check
+    if (!currentValue || typeof currentValue !== 'string') return;
     setSelectedCurrency(currentValue);
     onChange(currentValue);
     setOpen(false);

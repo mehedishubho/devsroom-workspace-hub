@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Company } from "@/types";
-import { toast } from "@/hooks/use-toast";
+import { simplifiedToast } from "@/hooks/use-toast";
 
 export const getCompanies = async (): Promise<Company[]> => {
   try {
@@ -20,7 +20,7 @@ export const getCompanies = async (): Promise<Company[]> => {
     }));
   } catch (error) {
     console.error('Error fetching companies:', error);
-    toast.error("Failed to fetch companies. Please try again.");
+    simplifiedToast.error("Failed to fetch companies. Please try again.");
     return [];
   }
 };
@@ -43,7 +43,7 @@ export const createCompany = async (name: string): Promise<Company | null> => {
     };
   } catch (error) {
     console.error('Error creating company:', error);
-    toast.error("Failed to create company. Please try again.");
+    simplifiedToast.error("Failed to create company. Please try again.");
     return null;
   }
 };
@@ -67,7 +67,7 @@ export const updateCompany = async (id: string, name: string): Promise<Company |
     };
   } catch (error) {
     console.error('Error updating company:', error);
-    toast.error("Failed to update company. Please try again.");
+    simplifiedToast.error("Failed to update company. Please try again.");
     return null;
   }
 };
@@ -83,7 +83,7 @@ export const deleteCompany = async (id: string): Promise<boolean> => {
     if (clientsError) throw clientsError;
     
     if (clients && clients.length > 0) {
-      toast.error("Cannot delete company with existing clients. Please reassign or delete the clients first.");
+      simplifiedToast.error("Cannot delete company with existing clients. Please reassign or delete the clients first.");
       return false;
     }
     
@@ -97,7 +97,7 @@ export const deleteCompany = async (id: string): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Error deleting company:', error);
-    toast.error("Failed to delete company. Please try again.");
+    simplifiedToast.error("Failed to delete company. Please try again.");
     return false;
   }
 };

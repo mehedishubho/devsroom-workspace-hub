@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
+import { simplifiedToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { addProject, updateProject } from "@/services/projectService";
 import { Client, Project, Payment, OtherAccess } from "@/types";
@@ -200,13 +200,13 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         if (onSubmit) {
           onSubmit(newProject);
         } else {
-          toast.success("Project created successfully!");
+          simplifiedToast.success("Project created successfully!");
           navigate(`/project/${newProject.id}`);
         }
       }
     } catch (error) {
       console.error("Error saving project:", error);
-      toast.error("Failed to save project. Please try again.");
+      simplifiedToast.error("Failed to save project. Please try again.");
     }
   };
 

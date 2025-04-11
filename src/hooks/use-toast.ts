@@ -1,6 +1,6 @@
 
 import * as React from "react"
-import { toast as sonnerToast, Toast as SonnerToast } from "sonner"
+import { toast as sonnerToast } from "sonner"
 
 const TOAST_LIMIT = 5
 const TOAST_REMOVE_DELAY = 5000
@@ -102,7 +102,6 @@ export const reducer = (state: State, action: Action): State => {
           t.id === toastId || toastId === undefined
             ? {
                 ...t,
-                open: false,
               }
             : t
         ),
@@ -150,10 +149,6 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
-      },
     },
   })
 
@@ -198,14 +193,14 @@ export function getToastFunction() {
     error: (message: string) => sonnerToast.error(message),
     info: (message: string) => sonnerToast.info(message),
     warning: (message: string) => sonnerToast.warning(message),
-    custom: (message: string, options?: Partial<SonnerToast>) => sonnerToast(message, options),
+    custom: (message: string, options?: any) => sonnerToast(message, options),
   }
 }
 
 // Simplified toast for direct import
 const simplifiedToast = {
+  success: (description: string) => toast({ variant: "default", title: "Success", description }),
   error: (description: string) => toast({ variant: "destructive", title: "Error", description }),
-  success: (description: string) => toast({ title: "Success", description }),
   info: (description: string) => toast({ title: "Info", description }),
   warning: (description: string) => toast({ title: "Warning", description }),
 }

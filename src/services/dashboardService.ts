@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats } from "@/types";
-import { toast } from "@/hooks/use-toast";
+import { simplifiedToast } from "@/hooks/use-toast";
 import { convertCurrency } from "@/utils/currency";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
@@ -67,7 +67,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     };
   } catch (error) {
     console.error('Error in getDashboardStats:', error);
-    toast.error(error.message || "An unexpected error occurred");
+    simplifiedToast.error(error.message || "An unexpected error occurred");
     
     // Return default values in case of error
     return {
