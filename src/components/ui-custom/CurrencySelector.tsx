@@ -71,7 +71,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
               <CommandItem
                 key={currency.code}
                 value={currency.code}
-                onSelect={handleSelect}
+                onSelect={() => handleSelect(currency.code)}
               >
                 <Check
                   className={cn(
