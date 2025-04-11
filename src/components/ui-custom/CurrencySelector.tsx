@@ -34,6 +34,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   }, [value]);
 
   const handleSelect = (currentValue: string) => {
+    if (!currentValue) return; // Safety check
     setSelectedCurrency(currentValue);
     onChange(currentValue);
     setOpen(false);
@@ -41,7 +42,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
 
   const selectedOption = currencies.find(
     (currency) => currency.code === selectedCurrency
-  );
+  ) || currencies.find(currency => currency.code === "USD") || currencies[0]; // Fallback
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -71,7 +72,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
               <CommandItem
                 key={currency.code}
                 value={currency.code}
-                onSelect={() => handleSelect(currency.code)}
+                onSelect={handleSelect}
               >
                 <Check
                   className={cn(

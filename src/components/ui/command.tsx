@@ -116,6 +116,7 @@ const CommandItem = React.forwardRef<
   // Ensure that onSelect always gets a function, not undefined
   const handleSelect = React.useCallback(
     (value: string) => {
+      if (!value) return; // Safety check for undefined or empty values
       if (typeof onSelect === 'function') {
         onSelect(value);
       }
