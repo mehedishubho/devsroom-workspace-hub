@@ -113,12 +113,20 @@ const CommandItem = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
 >(({ className, onSelect, ...props }, ref) => {
-  // Ensure that onSelect always gets a function, not undefined
+  // Enhanced handler with comprehensive safety checks
   const handleSelect = React.useCallback(
     (value: string) => {
-      if (!value) return; // Safety check for undefined or empty values
+      // Make sure we don't call onSelect with undefined or non-string values
+      if (value === undefined || value === null || typeof value !== 'string' || value === '') {
+        return; // Exit early for invalid values
+      }
+      
       if (typeof onSelect === 'function') {
-        onSelect(value);
+        try {
+          onSelect(value);
+        } catch (error) {
+          console.error("Error in CommandItem onSelect:", error);
+        }
       }
     },
     [onSelect]

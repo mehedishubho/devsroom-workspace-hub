@@ -27,19 +27,22 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   const [open, setOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(value || "USD");
 
+  // Update internal state when prop changes
   useEffect(() => {
     if (value) {
       setSelectedCurrency(value);
     }
   }, [value]);
 
+  // Safe handler for currency selection
   const handleSelect = (currentValue: string) => {
-    if (!currentValue) return; // Safety check
+    if (!currentValue || typeof currentValue !== 'string') return; // Enhanced safety check
     setSelectedCurrency(currentValue);
     onChange(currentValue);
     setOpen(false);
   };
 
+  // Find selected currency with fallbacks
   const selectedOption = currencies.find(
     (currency) => currency.code === selectedCurrency
   ) || currencies.find(currency => currency.code === "USD") || currencies[0]; // Fallback
@@ -68,11 +71,15 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
           <CommandInput placeholder="Search currency..." />
           <CommandEmpty>No currency found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-y-auto">
-            {currencies.map((currency) => (
+            {Array.isArray(currencies) && currencies.map((currency) => (
               <CommandItem
                 key={currency.code}
                 value={currency.code}
-                onSelect={handleSelect}
+                onSelect={(value) => {
+                  if (value && typeof value === 'string') {
+                    handleSelect(value);
+                  }
+                }}
               >
                 <Check
                   className={cn(
