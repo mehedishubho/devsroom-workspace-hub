@@ -7,19 +7,28 @@ import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 
+// Create a safer wrapper component for CommandPrimitive
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive
-    ref={ref}
-    className={cn(
-      "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  // Ensure the children prop is valid
+  const safeProps = {
+    ...props,
+    children: React.Children.toArray(props.children).filter(Boolean)
+  };
+
+  return (
+    <CommandPrimitive
+      ref={ref}
+      className={cn(
+        "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
+        className
+      )}
+      {...safeProps}
+    />
+  );
+})
 Command.displayName = CommandPrimitive.displayName
 
 interface CommandDialogProps extends DialogProps {}
@@ -84,16 +93,23 @@ CommandEmpty.displayName = CommandPrimitive.Empty.displayName
 const CommandGroup = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Group>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Group
-    ref={ref}
-    className={cn(
-      "overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, children, ...props }, ref) => {
+  // Ensure children is not undefined
+  const safeChildren = React.Children.toArray(children).filter(Boolean);
+  
+  return (
+    <CommandPrimitive.Group
+      ref={ref}
+      className={cn(
+        "overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground",
+        className
+      )}
+      {...props}
+    >
+      {safeChildren}
+    </CommandPrimitive.Group>
+  );
+})
 
 CommandGroup.displayName = CommandPrimitive.Group.displayName
 
@@ -115,15 +131,15 @@ const CommandItem = React.forwardRef<
 >(({ className, onSelect, ...props }, ref) => {
   // Enhanced handler with comprehensive safety checks
   const handleSelect = React.useCallback(
-    (value: string) => {
+    (currentValue: string) => {
       // Make sure we don't call onSelect with undefined or non-string values
-      if (value === undefined || value === null || typeof value !== 'string' || value === '') {
+      if (currentValue === undefined || currentValue === null || typeof currentValue !== 'string' || currentValue === '') {
         return; // Exit early for invalid values
       }
       
       if (typeof onSelect === 'function') {
         try {
-          onSelect(value);
+          onSelect(currentValue);
         } catch (error) {
           console.error("Error in CommandItem onSelect:", error);
         }

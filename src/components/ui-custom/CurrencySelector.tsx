@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,13 @@ export interface CurrencySelectorProps {
 const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps) => {
   const [open, setOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(value || "USD");
+  
+  // Ensure currencies is always an array
+  const safeCurrencies = useMemo(() => {
+    return Array.isArray(currencies) && currencies.length > 0 
+      ? currencies 
+      : [{ code: "USD", name: "US Dollar", symbol: "$" }];
+  }, []);
 
   // Update internal state when prop changes
   useEffect(() => {
@@ -43,9 +50,15 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   };
 
   // Find selected currency with fallbacks
-  const selectedOption = currencies.find(
-    (currency) => currency.code === selectedCurrency
-  ) || currencies.find(currency => currency.code === "USD") || currencies[0]; // Fallback
+  const selectedOption = useMemo(() => {
+    const found = safeCurrencies.find(currency => currency.code === selectedCurrency);
+    if (found) return found;
+    
+    const defaultUSD = safeCurrencies.find(currency => currency.code === "USD");
+    if (defaultUSD) return defaultUSD;
+    
+    return safeCurrencies[0];
+  }, [selectedCurrency, safeCurrencies]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -71,7 +84,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
           <CommandInput placeholder="Search currency..." />
           <CommandEmpty>No currency found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-y-auto">
-            {Array.isArray(currencies) && currencies.map((currency) => (
+            {safeCurrencies.map((currency) => (
               <CommandItem
                 key={currency.code}
                 value={currency.code}
