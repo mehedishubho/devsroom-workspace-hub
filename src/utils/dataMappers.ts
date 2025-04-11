@@ -31,7 +31,7 @@ export const mapPaymentToDbPayment = (payment: Payment, projectId: string) => {
     amount: payment.amount,
     payment_date: payment.date instanceof Date 
       ? format(payment.date, 'yyyy-MM-dd') 
-      : payment.date ? payment.date.toString() : '',
+      : payment.date ? String(payment.date) : '',
     description: payment.description || '',
     payment_method: payment.status || 'pending',
     currency: payment.currency || 'USD'
