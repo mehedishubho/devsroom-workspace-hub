@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Project, Payment, Credential, Hosting, OtherAccess, ProjectFormData } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -128,6 +129,7 @@ export async function getProjects(): Promise<Project[]> {
     return mappedProjects;
   } catch (error) {
     console.error('Error in getProjects:', error);
+    const { toast } = getToast();
     toast({
       title: "Error fetching projects",
       description: error.message || "An unexpected error occurred",
@@ -202,6 +204,8 @@ export async function getProjectById(id: string): Promise<Project | null> {
 }
 
 export async function addProject(projectData: ProjectFormData): Promise<Project | null> {
+  const { toast } = getToast();
+  
   try {
     // Start a transaction
     const { data: project, error: projectError } = await supabase
@@ -272,7 +276,7 @@ export async function addProject(projectData: ProjectFormData): Promise<Project 
         amount: payment.amount,
         payment_date: payment.date.toISOString(),
         description: payment.description,
-        currency: payment.currency || 'USD',
+        currency: payment.currency || 'USD'
         // Note: We're not sending the status to the database since it doesn't have a status field
       }));
 
@@ -297,6 +301,8 @@ export async function addProject(projectData: ProjectFormData): Promise<Project 
 }
 
 export async function updateProject(id: string, projectData: Partial<ProjectFormData>): Promise<Project | null> {
+  const { toast } = getToast();
+  
   try {
     // Update the main project
     const { error: projectError } = await supabase
@@ -412,7 +418,7 @@ export async function updateProject(id: string, projectData: Partial<ProjectForm
           amount: payment.amount,
           payment_date: payment.date.toISOString(),
           description: payment.description,
-          currency: payment.currency || 'USD',
+          currency: payment.currency || 'USD'
           // No status field in the database
         }));
 
@@ -438,6 +444,8 @@ export async function updateProject(id: string, projectData: Partial<ProjectForm
 }
 
 export async function deleteProject(id: string): Promise<boolean> {
+  const { toast } = getToast();
+  
   try {
     // Delete the project (cascading should handle related records)
     const { error } = await supabase
@@ -473,7 +481,7 @@ export async function addPayment(
         amount: payment.amount,
         payment_date: payment.date.toISOString(),
         description: payment.description,
-        currency: payment.currency || 'USD',
+        currency: payment.currency || 'USD'
         // No status field in the database
       })
       .select()
