@@ -39,6 +39,7 @@ import { v4 as uuidv4 } from 'uuid';
 import CurrencySelector from "@/components/ui-custom/CurrencySelector";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { mapDbClientToClient } from "@/utils/dataMappers";
 
 type ProjectStatus = "active" | "completed" | "on-hold" | "cancelled" | "under-revision" | "planning" | "in-progress" | "review";
 
@@ -92,13 +93,14 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         .order('name', { ascending: true });
       
       if (error) throw error;
-      return data as Client[];
+      return data;
     }
   });
 
   useEffect(() => {
     if (clientsData) {
-      setClients(clientsData);
+      const mappedClients = clientsData.map(client => mapDbClientToClient(client));
+      setClients(mappedClients);
     }
   }, [clientsData]);
 
@@ -148,7 +150,8 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         
         if (newClientData) {
           clientId = newClientData.id;
-          setClients([...clients, newClientData as Client]);
+          const mappedNewClient = mapDbClientToClient(newClientData);
+          setClients([...clients, mappedNewClient]);
         }
       }
 
@@ -194,24 +197,16 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       } else {
         const newProject = await addProject(projectData);
         
-        if (onSubmit && newProject) {
+        if (onSubmit) {
           onSubmit(newProject);
-        } else if (newProject) {
-          toast({
-            title: "Success",
-            description: "Project created successfully!",
-            variant: "default",
-          });
+        } else {
+          toast.success("Project created successfully!");
           navigate(`/project/${newProject.id}`);
         }
       }
     } catch (error) {
       console.error("Error saving project:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save project. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to save project. Please try again.");
     }
   };
 

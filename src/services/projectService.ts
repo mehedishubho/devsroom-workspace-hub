@@ -1,6 +1,114 @@
 import { Project, OtherAccess, Payment, ProjectFormData } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { mapDbClientToClient, mapPaymentToDbPayment, ensureValidProjectStatus } from "@/utils/dataMappers";
+import { format } from "date-fns";
+
+// Get all projects
+export const getProjects = async (): Promise<Project[]> => {
+  try {
+    const { data: projectsData, error: projectsError } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        clients(*)
+      `);
+
+    if (projectsError) throw projectsError;
+
+    const projects: Project[] = await Promise.all((projectsData || []).map(async (project: any) => {
+      // Fetch payments for the project
+      const { data: paymentsData } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('project_id', project.id);
+
+      // Map payments to the correct format
+      const payments: Payment[] = (paymentsData || []).map((payment: any) => ({
+        id: payment.id,
+        amount: payment.amount,
+        date: new Date(payment.payment_date),
+        description: payment.description,
+        status: payment.payment_method as 'pending' | 'completed',
+        currency: payment.currency || 'USD'
+      }));
+
+      // Fetch credentials for the project
+      const { data: credentialsData } = await supabase
+        .from('project_credentials')
+        .select('*')
+        .eq('project_id', project.id);
+
+      // Organize credentials
+      let mainCredentials = { username: '', password: '', notes: '' };
+      let hostingCredentials = { provider: '', credentials: { username: '', password: '' }, notes: '' };
+      const otherAccess: OtherAccess[] = [];
+
+      (credentialsData || []).forEach((cred: any) => {
+        if (cred.platform === 'main') {
+          mainCredentials = {
+            username: cred.username,
+            password: cred.password,
+            notes: cred.notes
+          };
+        } else if (cred.platform.startsWith('hosting-')) {
+          const provider = cred.platform.replace('hosting-', '');
+          hostingCredentials = {
+            provider,
+            credentials: {
+              username: cred.username,
+              password: cred.password
+            },
+            notes: cred.notes
+          };
+        } else {
+          // Other access types
+          const [type, name] = cred.platform.split('-');
+          
+          if (type && name) {
+            otherAccess.push({
+              id: cred.id,
+              type: type as 'email' | 'ftp' | 'ssh' | 'cms' | 'other',
+              name,
+              credentials: {
+                username: cred.username,
+                password: cred.password
+              },
+              notes: cred.notes
+            });
+          }
+        }
+      });
+
+      return {
+        id: project.id,
+        name: project.name,
+        clientId: project.client_id,
+        clientName: project.clients?.name || 'Unknown Client',
+        description: project.description || '',
+        url: '',
+        startDate: new Date(project.start_date),
+        endDate: project.deadline_date ? new Date(project.deadline_date) : undefined,
+        price: project.budget || 0,
+        status: ensureValidProjectStatus(project.status),
+        projectTypeId: project.project_type_id,
+        projectCategoryId: project.project_category_id,
+        credentials: mainCredentials,
+        hosting: hostingCredentials,
+        otherAccess,
+        payments,
+        createdAt: new Date(project.created_at),
+        updatedAt: new Date(project.updated_at)
+      };
+    }));
+
+    return projects;
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    toast.error("Failed to fetch projects. Please try again.");
+    return [];
+  }
+};
 
 // Add a new project
 export const addProject = async (projectData: Partial<Project>): Promise<Project> => {
@@ -12,10 +120,14 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
         name: projectData.name,
         client_id: projectData.clientId,
         description: projectData.description || '',
-        start_date: projectData.startDate,
-        deadline_date: projectData.endDate,
+        start_date: projectData.startDate instanceof Date 
+          ? format(projectData.startDate, 'yyyy-MM-dd') 
+          : projectData.startDate?.toString(),
+        deadline_date: projectData.endDate instanceof Date 
+          ? format(projectData.endDate, 'yyyy-MM-dd') 
+          : projectData.endDate?.toString(),
         budget: projectData.price || 0,
-        status: projectData.status || 'active',
+        status: ensureValidProjectStatus(projectData.status || 'active'),
         project_type_id: projectData.projectTypeId,
         project_category_id: projectData.projectCategoryId
       })
@@ -67,18 +179,13 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
 
     // Create payments
     if (projectData.payments && projectData.payments.length > 0) {
-      const payments = projectData.payments.map(payment => ({
-        project_id: projectRecord.id,
-        amount: payment.amount,
-        payment_date: payment.date,
-        description: payment.description,
-        payment_method: payment.status,
-        currency: payment.currency || 'USD'
-      }));
+      const dbPayments = projectData.payments.map(payment => 
+        mapPaymentToDbPayment(payment, projectRecord.id)
+      );
 
       await supabase
         .from('payments')
-        .insert(payments);
+        .insert(dbPayments);
     }
 
     // Fetch the client name
@@ -98,7 +205,7 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       startDate: new Date(projectRecord.start_date),
       endDate: projectRecord.deadline_date ? new Date(projectRecord.deadline_date) : undefined,
       price: projectRecord.budget || 0,
-      status: projectRecord.status,
+      status: ensureValidProjectStatus(projectRecord.status),
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
       url: projectData.url || '',
@@ -116,11 +223,7 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
     return newProject;
   } catch (error) {
     console.error('Error adding project:', error);
-    toast({
-      title: "Error",
-      description: "Failed to create project. Please try again.",
-      variant: "destructive",
-    });
+    toast.error("Failed to create project. Please try again.");
     throw error;
   }
 };
@@ -135,10 +238,14 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
         name: updates.name,
         client_id: updates.clientId,
         description: updates.description,
-        start_date: updates.startDate,
-        deadline_date: updates.endDate,
+        start_date: updates.startDate instanceof Date 
+          ? format(updates.startDate, 'yyyy-MM-dd') 
+          : updates.startDate?.toString(),
+        deadline_date: updates.endDate instanceof Date 
+          ? format(updates.endDate, 'yyyy-MM-dd') 
+          : updates.endDate?.toString(),
         budget: updates.price,
-        status: updates.status,
+        status: ensureValidProjectStatus(updates.status || 'active'),
         project_type_id: updates.projectTypeId,
         project_category_id: updates.projectCategoryId
       })
@@ -219,18 +326,13 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
         .eq('project_id', id);
 
       if (updates.payments.length > 0) {
-        const payments = updates.payments.map(payment => ({
-          project_id: id,
-          amount: payment.amount,
-          payment_date: payment.date,
-          description: payment.description,
-          payment_method: payment.status,
-          currency: payment.currency || 'USD'
-        }));
+        const dbPayments = updates.payments.map(payment => 
+          mapPaymentToDbPayment(payment, id)
+        );
 
         await supabase
           .from('payments')
-          .insert(payments);
+          .insert(dbPayments);
       }
     }
 
@@ -293,7 +395,7 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       startDate: new Date(projectRecord.start_date),
       endDate: projectRecord.deadline_date ? new Date(projectRecord.deadline_date) : undefined,
       price: projectRecord.budget || 0,
-      status: projectRecord.status,
+      status: ensureValidProjectStatus(projectRecord.status),
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
       url: updates.url || '',
@@ -311,11 +413,7 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
     return updatedProject;
   } catch (error) {
     console.error('Error updating project:', error);
-    toast({
-      title: "Error",
-      description: "Failed to update project. Please try again.",
-      variant: "destructive",
-    });
+    toast.error("Failed to update project. Please try again.");
     return null;
   }
 };

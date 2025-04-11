@@ -1,13 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats } from "@/types";
-import { getToastFunction } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { convertCurrency } from "@/utils/currency";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  // Get toast function
-  const { toast } = getToastFunction();
-  
   try {
     // Get projects count by status
     const { data: projectsData, error: projectsError } = await supabase
@@ -70,11 +67,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     };
   } catch (error) {
     console.error('Error in getDashboardStats:', error);
-    toast({
-      title: "Error fetching dashboard statistics",
-      description: error.message || "An unexpected error occurred",
-      variant: "destructive"
-    });
+    toast.error(error.message || "An unexpected error occurred");
     
     // Return default values in case of error
     return {
