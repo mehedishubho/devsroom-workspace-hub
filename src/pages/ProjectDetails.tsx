@@ -7,13 +7,15 @@ import ProjectForm from "@/components/ProjectForm";
 import { Button } from "@/components/ui/button";
 import { Pencil, ArrowLeft, Calendar, DollarSign, Tag, FileText } from "lucide-react";
 import PageTransition from "@/components/ui-custom/PageTransition";
-import { sampleProjects, updateProject } from "@/data/projects";
 import { Project } from "@/types";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import PaymentItem from "@/components/ui-custom/PaymentItem";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { updateProject } from "@/services/projectService";
+import { mapDbClientToClient } from "@/utils/dataMappers";
 
 const ProjectDetails = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -23,16 +25,118 @@ const ProjectDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
 
-  // Fetch project details
   useEffect(() => {
-    // Simulate API call delay
-    const timer = setTimeout(() => {
-      const foundProject = sampleProjects.find(p => p.id === projectId);
-      
-      if (foundProject) {
-        setProject(foundProject);
+    const fetchProjectDetails = async () => {
+      if (!projectId) {
+        toast({
+          title: "Project ID missing",
+          description: "Could not find the project ID in the URL",
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+
+      try {
+        const { data: projectData, error: projectError } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            clients(*)
+          `)
+          .eq('id', projectId)
+          .single();
+
+        if (projectError || !projectData) {
+          throw new Error("Project not found");
+        }
+
+        const { data: paymentsData } = await supabase
+          .from('payments')
+          .select('*')
+          .eq('project_id', projectId);
+
+        const { data: credentialsData } = await supabase
+          .from('project_credentials')
+          .select('*')
+          .eq('project_id', projectId);
+
+        let mainCredentials = { username: '', password: '', notes: '' };
+        let hostingCredentials = { provider: '', credentials: { username: '', password: '' }, notes: '', url: '' };
+        const otherAccess = [];
+
+        if (credentialsData) {
+          for (const cred of credentialsData) {
+            if (cred.platform === 'main') {
+              mainCredentials = {
+                username: cred.username,
+                password: cred.password,
+                notes: cred.notes
+              };
+            } else if (cred.platform.startsWith('hosting-')) {
+              const provider = cred.platform.replace('hosting-', '');
+              hostingCredentials = {
+                provider,
+                credentials: {
+                  username: cred.username,
+                  password: cred.password
+                },
+                notes: cred.notes,
+                url: ''
+              };
+            } else {
+              const [type, name] = cred.platform.split('-');
+              
+              if (type && name) {
+                otherAccess.push({
+                  id: cred.id,
+                  type: type as 'email' | 'ftp' | 'ssh' | 'cms' | 'other',
+                  name,
+                  credentials: {
+                    username: cred.username,
+                    password: cred.password
+                  },
+                  notes: cred.notes
+                });
+              }
+            }
+          }
+        }
+
+        const payments = (paymentsData || []).map(payment => ({
+          id: payment.id,
+          amount: payment.amount,
+          date: new Date(payment.payment_date),
+          description: payment.description || '',
+          status: payment.payment_method as 'pending' | 'completed',
+          currency: payment.currency || 'USD'
+        }));
+
+        const formattedProject: Project = {
+          id: projectData.id,
+          name: projectData.name,
+          clientId: projectData.client_id,
+          clientName: projectData.clients?.name || 'Unknown Client',
+          description: projectData.description || '',
+          url: '',
+          startDate: new Date(projectData.start_date),
+          endDate: projectData.deadline_date ? new Date(projectData.deadline_date) : undefined,
+          price: projectData.budget || 0,
+          status: projectData.status || 'active',
+          projectTypeId: projectData.project_type_id,
+          projectCategoryId: projectData.project_category_id,
+          credentials: mainCredentials,
+          hosting: hostingCredentials,
+          otherAccess,
+          payments,
+          createdAt: new Date(projectData.created_at),
+          updatedAt: new Date(projectData.updated_at)
+        };
+
+        setProject(formattedProject);
         setIsLoading(false);
-      } else {
+      } catch (error) {
+        console.error('Error fetching project:', error);
         toast({
           title: "Project not found",
           description: "Could not find the requested project",
@@ -40,9 +144,9 @@ const ProjectDetails = () => {
         });
         navigate("/");
       }
-    }, 300);
-    
-    return () => clearTimeout(timer);
+    };
+
+    fetchProjectDetails();
   }, [projectId, navigate, toast]);
 
   const handleBack = () => {
@@ -57,18 +161,23 @@ const ProjectDetails = () => {
     setIsEditFormOpen(false);
   };
 
-  const handleUpdateProject = (updatedProject: Project) => {
+  const handleUpdateProject = async (updatedProject: Project) => {
     if (project?.id) {
-      const result = updateProject(project.id, updatedProject);
-      if (result) {
-        setProject(result);
-        setIsEditFormOpen(false);
-        
-        toast({
-          title: "Project updated",
-          description: "Your changes have been saved successfully",
-        });
-      } else {
+      try {
+        const result = await updateProject(project.id, updatedProject);
+        if (result) {
+          setProject(result);
+          setIsEditFormOpen(false);
+          
+          toast({
+            title: "Project updated",
+            description: "Your changes have been saved successfully",
+          });
+        } else {
+          throw new Error("Failed to update project");
+        }
+      } catch (error) {
+        console.error('Error updating project:', error);
         toast({
           title: "Update failed",
           description: "Could not update the project. Please try again.",
@@ -152,7 +261,7 @@ const ProjectDetails = () => {
                       rel="noopener noreferrer"
                       className="text-primary hover:underline break-all"
                     >
-                      {project.url}
+                      {project.url || "No URL provided."}
                     </a>
                   </div>
 
@@ -177,13 +286,13 @@ const ProjectDetails = () => {
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
                         <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.credentials.username}
+                          {project.credentials.username || "No username provided"}
                         </div>
                       </div>
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
                         <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.credentials.password}
+                          {project.credentials.password || "No password provided"}
                         </div>
                       </div>
                       {project.credentials.notes && (
@@ -202,7 +311,7 @@ const ProjectDetails = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md">
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Provider</h4>
-                        <div className="text-sm">{project.hosting.provider}</div>
+                        <div className="text-sm">{project.hosting.provider || "No provider specified"}</div>
                       </div>
                       {project.hosting.url && (
                         <div>
@@ -220,13 +329,13 @@ const ProjectDetails = () => {
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
                         <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.hosting.credentials.username}
+                          {project.hosting.credentials.username || "No username provided"}
                         </div>
                       </div>
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
                         <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.hosting.credentials.password}
+                          {project.hosting.credentials.password || "No password provided"}
                         </div>
                       </div>
                       {project.hosting.notes && (
@@ -238,7 +347,7 @@ const ProjectDetails = () => {
                     </div>
                   </div>
 
-                  {project.otherAccess.length > 0 && (
+                  {project.otherAccess && project.otherAccess.length > 0 && (
                     <>
                       <Separator />
                       <div className="space-y-4">
@@ -257,13 +366,13 @@ const ProjectDetails = () => {
                             <div>
                               <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
                               <div className="font-mono text-sm bg-background p-2 rounded border">
-                                {access.credentials.username}
+                                {access.credentials.username || "No username provided"}
                               </div>
                             </div>
                             <div>
                               <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
                               <div className="font-mono text-sm bg-background p-2 rounded border">
-                                {access.credentials.password}
+                                {access.credentials.password || "No password provided"}
                               </div>
                             </div>
                             {access.notes && (
@@ -286,7 +395,7 @@ const ProjectDetails = () => {
                   <CardDescription>Payment history and schedule</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {project.payments.length === 0 ? (
+                  {!project.payments || project.payments.length === 0 ? (
                     <div className="text-center py-6">
                       <p className="text-muted-foreground">No payments added yet</p>
                     </div>
@@ -335,7 +444,7 @@ const ProjectDetails = () => {
                       <span className="text-sm">Project Price</span>
                     </div>
                     <span className="text-sm font-medium">
-                      ${project.price.toLocaleString()}
+                      ${project.price ? project.price.toLocaleString() : '0'}
                     </span>
                   </div>
                   
