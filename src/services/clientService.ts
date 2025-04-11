@@ -22,6 +22,25 @@ export const getClients = async (): Promise<Client[]> => {
   }
 };
 
+export const getClientsByCompanyId = async (companyId: string): Promise<Client[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('name', { ascending: true });
+    
+    if (error) throw error;
+    
+    // Map database client records to Client type
+    return data.map(client => mapDbClientToClient(client));
+  } catch (error) {
+    console.error(`Error fetching clients for company ${companyId}:`, error);
+    toast.error("Failed to fetch company clients. Please try again.");
+    return [];
+  }
+};
+
 export const getClientById = async (id: string): Promise<Client | null> => {
   try {
     const { data, error } = await supabase
@@ -67,3 +86,6 @@ export const addClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'u
     return null;
   }
 };
+
+// Alias for addClient to maintain compatibility with existing code
+export const createClient = addClient;

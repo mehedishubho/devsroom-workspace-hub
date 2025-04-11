@@ -24,3 +24,80 @@ export const getCompanies = async (): Promise<Company[]> => {
     return [];
   }
 };
+
+export const createCompany = async (name: string): Promise<Company | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .insert({ name })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
+    };
+  } catch (error) {
+    console.error('Error creating company:', error);
+    toast.error("Failed to create company. Please try again.");
+    return null;
+  }
+};
+
+export const updateCompany = async (id: string, name: string): Promise<Company | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .update({ name })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
+    };
+  } catch (error) {
+    console.error('Error updating company:', error);
+    toast.error("Failed to update company. Please try again.");
+    return null;
+  }
+};
+
+export const deleteCompany = async (id: string): Promise<boolean> => {
+  try {
+    // First check if company has clients
+    const { data: clients, error: clientsError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('company_id', id);
+    
+    if (clientsError) throw clientsError;
+    
+    if (clients && clients.length > 0) {
+      toast.error("Cannot delete company with existing clients. Please reassign or delete the clients first.");
+      return false;
+    }
+    
+    const { error } = await supabase
+      .from('companies')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting company:', error);
+    toast.error("Failed to delete company. Please try again.");
+    return false;
+  }
+};

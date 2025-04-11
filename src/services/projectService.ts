@@ -1,3 +1,4 @@
+
 import { Project, OtherAccess, Payment, ProjectFormData } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -122,10 +123,10 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
         description: projectData.description || '',
         start_date: projectData.startDate instanceof Date 
           ? format(projectData.startDate, 'yyyy-MM-dd') 
-          : projectData.startDate?.toString(),
+          : projectData.startDate ? String(projectData.startDate) : '',
         deadline_date: projectData.endDate instanceof Date 
           ? format(projectData.endDate, 'yyyy-MM-dd') 
-          : projectData.endDate?.toString(),
+          : projectData.endDate ? String(projectData.endDate) : null,
         budget: projectData.price || 0,
         status: ensureValidProjectStatus(projectData.status || 'active'),
         project_type_id: projectData.projectTypeId,
@@ -209,10 +210,11 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
       url: projectData.url || '',
-      credentials: projectData.credentials || { username: '', password: '' },
+      credentials: projectData.credentials || { username: '', password: '', notes: '' },
       hosting: projectData.hosting || { 
         provider: '', 
-        credentials: { username: '', password: '' } 
+        credentials: { username: '', password: '' },
+        notes: '' 
       },
       otherAccess: projectData.otherAccess || [],
       payments: projectData.payments || [],
@@ -240,10 +242,10 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
         description: updates.description,
         start_date: updates.startDate instanceof Date 
           ? format(updates.startDate, 'yyyy-MM-dd') 
-          : updates.startDate?.toString(),
+          : updates.startDate ? String(updates.startDate) : null,
         deadline_date: updates.endDate instanceof Date 
           ? format(updates.endDate, 'yyyy-MM-dd') 
-          : updates.endDate?.toString(),
+          : updates.endDate ? String(updates.endDate) : null,
         budget: updates.price,
         status: ensureValidProjectStatus(updates.status || 'active'),
         project_type_id: updates.projectTypeId,
@@ -399,10 +401,11 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
       url: updates.url || '',
-      credentials: updates.credentials || { username: '', password: '' },
+      credentials: updates.credentials || { username: '', password: '', notes: '' },
       hosting: updates.hosting || { 
         provider: '', 
-        credentials: { username: '', password: '' } 
+        credentials: { username: '', password: '' },
+        notes: '' 
       },
       otherAccess: updates.otherAccess || [],
       payments: mappedPayments,
