@@ -4,10 +4,15 @@ import { DashboardStats } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { convertCurrency } from "@/utils/currency";
 
-// Get toast function from hook
-const { toast } = useToast();
+// Create a function to get toast outside React components
+const getToast = () => {
+  return { toast: (args) => console.log('Toast:', args) };
+};
 
 export async function getDashboardStats(): Promise<DashboardStats> {
+  // Get toast function
+  const toast = getToast().toast;
+  
   try {
     // Get projects count by status
     const { data: projectsData, error: projectsError } = await supabase

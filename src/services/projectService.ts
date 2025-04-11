@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Project, Payment, Credential, Hosting, OtherAccess, ProjectFormData } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -66,9 +65,13 @@ const mapCredentialTypeToAccessType = (platform: string): 'email' | 'ftp' | 'ssh
 };
 
 // Get toast function from hook
-const { toast } = useToast();
+const getToast = () => {
+  return { toast: (args) => console.log('Toast:', args) };
+};
 
 export async function getProjects(): Promise<Project[]> {
+  const { toast } = getToast();
+  
   try {
     // First, get all projects
     const { data: projects, error: projectsError } = await supabase
@@ -135,6 +138,8 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
+  const { toast } = getToast();
+  
   try {
     // Get the project
     const { data: project, error: projectError } = await supabase
@@ -458,6 +463,8 @@ export async function addPayment(
   projectId: string, 
   payment: Omit<Payment, 'id'>
 ): Promise<Payment | null> {
+  const { toast } = getToast();
+  
   try {
     const { data, error } = await supabase
       .from('payments')

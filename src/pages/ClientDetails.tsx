@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -125,7 +124,7 @@ const ClientDetails = () => {
               endDate: project.deadline_date ? new Date(project.deadline_date) : undefined,
               price: project.budget || 0,
               payments: [],
-              status: project.status,
+              status: project.status as 'active' | 'completed' | 'on-hold' | 'cancelled' | 'under-revision',
               projectTypeId: project.project_type_id,
               projectCategoryId: project.project_category_id,
               notes: project.description,
