@@ -48,14 +48,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       sum + (project.budget || 0), 0);
     
     // Convert all payments to USD for consistent calculation
-    const paidRevenue = paymentsData.reduce((sum, payment) => {
+    const paidRevenue = paymentsData ? paymentsData.reduce((sum, payment) => {
       const amount = payment.amount || 0;
       const currency = payment.currency || 'USD';
       
       // Convert to USD if needed
       const amountInUsd = convertCurrency(amount, currency, 'USD');
       return sum + amountInUsd;
-    }, 0);
+    }, 0) : 0;
     
     const unpaidRevenue = totalRevenue - paidRevenue;
 

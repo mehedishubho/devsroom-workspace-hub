@@ -83,6 +83,25 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   const [otherAccess, setOtherAccess] = useState<OtherAccess[]>(initialData?.otherAccess || []);
   const [activeTab, setActiveTab] = useState("details");
 
+  const { data: clientsData, isLoading: clientsLoading } = useQuery({
+    queryKey: ['clients'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      return data as Client[];
+    }
+  });
+
+  useEffect(() => {
+    if (clientsData) {
+      setClients(clientsData);
+    }
+  }, [clientsData]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -111,16 +130,26 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     }
   }, [state, form]);
 
-  const handleSubmitForm = (values: z.infer<typeof formSchema>) => {
+  const handleSubmitForm = async (values: z.infer<typeof formSchema>) => {
     try {
       let clientId = values.clientId;
+      
       if (clientId === "new" && newClient) {
-        const client = addClient({
-          name: newClient,
-          email: `contact@${newClient.toLowerCase().replace(/\s+/g, "")}.com`,
-        });
-        clientId = client.id;
-        setClients([...sampleClients]);
+        const { data: newClientData, error } = await supabase
+          .from('clients')
+          .insert({
+            name: newClient,
+            email: `contact@${newClient.toLowerCase().replace(/\s+/g, "")}.com`,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        
+        if (newClientData) {
+          clientId = newClientData.id;
+          setClients([...clients, newClientData as Client]);
+        }
       }
 
       const projectStatus = mapFormStatusToProjectStatus(values.projectStatus);
@@ -158,22 +187,31 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       };
 
       if (initialData) {
-        if (onSubmit) {
-          onSubmit(projectData as Project);
+        const updatedProject = await updateProject(initialData.id, projectData);
+        if (onSubmit && updatedProject) {
+          onSubmit(updatedProject);
         }
       } else {
-        const project = addProject(projectData);
+        const newProject = await addProject(projectData);
         
-        if (onSubmit) {
-          onSubmit(project);
-        } else {
-          toast.success("Project created successfully!");
-          navigate(`/project/${project.id}`);
+        if (onSubmit && newProject) {
+          onSubmit(newProject);
+        } else if (newProject) {
+          toast({
+            title: "Success",
+            description: "Project created successfully!",
+            variant: "default",
+          });
+          navigate(`/project/${newProject.id}`);
         }
       }
     } catch (error) {
       console.error("Error saving project:", error);
-      toast.error("Failed to save project. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to save project. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -317,11 +355,17 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
+                      {clientsLoading ? (
+                        <SelectItem value="loading" disabled>Loading clients...</SelectItem>
+                      ) : clients.length > 0 ? (
+                        clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-clients" disabled>No clients found</SelectItem>
+                      )}
                       <SelectItem value="new">+ Add new client</SelectItem>
                     </SelectContent>
                   </Select>
