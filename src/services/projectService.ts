@@ -106,7 +106,11 @@ export const getProjects = async (): Promise<Project[]> => {
     return projects;
   } catch (error) {
     console.error('Error fetching projects:', error);
-    toast.error("Failed to fetch projects. Please try again.");
+    toast({
+      title: "Error",
+      description: "Failed to fetch projects. Please try again.",
+      variant: "destructive"
+    });
     return [];
   }
 };
@@ -114,6 +118,26 @@ export const getProjects = async (): Promise<Project[]> => {
 // Add a new project
 export const addProject = async (projectData: Partial<Project>): Promise<Project> => {
   try {
+    // Validate the required fields first
+    if (!projectData.name) {
+      throw new Error("Project name is required");
+    }
+    
+    if (!projectData.clientId) {
+      throw new Error("Client is required");
+    }
+    
+    // Validate project type and category IDs (ensure they're valid UUIDs)
+    if (projectData.projectTypeId && !isValidUUID(projectData.projectTypeId)) {
+      console.warn("Invalid project type ID format, will be set to null");
+      projectData.projectTypeId = null;
+    }
+    
+    if (projectData.projectCategoryId && !isValidUUID(projectData.projectCategoryId)) {
+      console.warn("Invalid project category ID format, will be set to null");
+      projectData.projectCategoryId = null;
+    }
+
     // First, create the project in the database
     const { data: projectRecord, error: projectError } = await supabase
       .from('projects')
@@ -129,8 +153,8 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
           : projectData.endDate ? String(projectData.endDate) : null,
         budget: projectData.price || 0,
         status: ensureValidProjectStatus(projectData.status || 'active'),
-        project_type_id: projectData.projectTypeId,
-        project_category_id: projectData.projectCategoryId
+        project_type_id: projectData.projectTypeId || null,
+        project_category_id: projectData.projectCategoryId || null
       })
       .select()
       .single();
@@ -225,14 +249,36 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
     return newProject;
   } catch (error) {
     console.error('Error adding project:', error);
-    toast.error("Failed to create project. Please try again.");
+    toast({
+      title: "Error",
+      description: error instanceof Error ? error.message : "Failed to create project. Please try again.",
+      variant: "destructive"
+    });
     throw error;
   }
 };
 
+// Helper function to check if a string is a valid UUID
+function isValidUUID(id: string | null | undefined): boolean {
+  if (!id) return false;
+  const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return regex.test(id);
+}
+
 // Update an existing project
 export const updateProject = async (id: string, updates: Partial<Project>): Promise<Project | null> => {
   try {
+    // Validate project type and category IDs
+    if (updates.projectTypeId && !isValidUUID(updates.projectTypeId)) {
+      console.warn("Invalid project type ID format, will be set to null");
+      updates.projectTypeId = null;
+    }
+    
+    if (updates.projectCategoryId && !isValidUUID(updates.projectCategoryId)) {
+      console.warn("Invalid project category ID format, will be set to null");
+      updates.projectCategoryId = null;
+    }
+    
     // Update the main project record
     const { data: projectRecord, error: projectError } = await supabase
       .from('projects')
@@ -248,8 +294,8 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
           : updates.endDate ? String(updates.endDate) : null,
         budget: updates.price,
         status: ensureValidProjectStatus(updates.status || 'active'),
-        project_type_id: updates.projectTypeId,
-        project_category_id: updates.projectCategoryId
+        project_type_id: updates.projectTypeId || null,
+        project_category_id: updates.projectCategoryId || null
       })
       .eq('id', id)
       .select()
@@ -416,7 +462,11 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
     return updatedProject;
   } catch (error) {
     console.error('Error updating project:', error);
-    toast.error("Failed to update project. Please try again.");
+    toast({
+      title: "Error",
+      description: error instanceof Error ? error.message : "Failed to update project. Please try again.",
+      variant: "destructive"
+    });
     return null;
   }
 };

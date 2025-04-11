@@ -57,7 +57,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
     const defaultUSD = safeCurrencies.find(currency => currency.code === "USD");
     if (defaultUSD) return defaultUSD;
     
-    return safeCurrencies[0];
+    return safeCurrencies[0] || { code: "USD", name: "US Dollar", symbol: "$" };
   }, [selectedCurrency, safeCurrencies]);
 
   return (
@@ -67,7 +67,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("justify-between", className)}
+          className={cn("justify-between w-full", className)}
         >
           {selectedOption ? (
             <span>
@@ -79,7 +79,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-0" align="start" sideOffset={5}>
+      <PopoverContent className="p-0 w-[300px]" align="start" sideOffset={5}>
         <Command>
           <CommandInput placeholder="Search currency..." />
           <CommandEmpty>No currency found.</CommandEmpty>
@@ -88,11 +88,8 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
               <CommandItem
                 key={currency.code}
                 value={currency.code}
-                onSelect={(value) => {
-                  if (value && typeof value === 'string') {
-                    handleSelect(value);
-                  }
-                }}
+                onSelect={handleSelect}
+                className="cursor-pointer"
               >
                 <Check
                   className={cn(

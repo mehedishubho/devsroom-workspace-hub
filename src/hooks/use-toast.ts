@@ -1,15 +1,16 @@
 
 import * as React from "react"
-import { ToastProps } from "@/components/ui/toast"
+import { toast as sonnerToast, Toast as SonnerToast } from "sonner"
 
 const TOAST_LIMIT = 5
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 5000
 
-type ToasterToast = ToastProps & {
+type ToasterToast = {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
-  action?: React.ReactElement
+  action?: React.ReactNode
+  variant?: "default" | "destructive"
 }
 
 const actionTypes = {
@@ -31,19 +32,19 @@ type ActionType = typeof actionTypes
 type Action =
   | {
       type: ActionType["ADD_TOAST"]
-      toast: Omit<ToasterToast, "id">
+      toast: ToasterToast
     }
   | {
       type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast> & { id: string }
+      toast: Partial<ToasterToast>
     }
   | {
       type: ActionType["DISMISS_TOAST"]
-      toastId?: string
+      toastId: string
     }
   | {
       type: ActionType["REMOVE_TOAST"]
-      toastId?: string
+      toastId: string
     }
 
 interface State {
@@ -52,15 +53,28 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const reducer = (state: State, action: Action): State => {
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return
+  }
+
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId)
+    dispatch({
+      type: actionTypes.REMOVE_TOAST,
+      toastId: toastId,
+    })
+  }, TOAST_REMOVE_DELAY)
+
+  toastTimeouts.set(toastId, timeout)
+}
+
+export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case actionTypes.ADD_TOAST:
       return {
         ...state,
-        toasts: [
-          ...state.toasts,
-          { id: genId(), ...action.toast },
-        ].slice(0, TOAST_LIMIT),
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
       }
 
     case actionTypes.UPDATE_TOAST:
@@ -74,8 +88,6 @@ const reducer = (state: State, action: Action): State => {
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -110,22 +122,6 @@ const reducer = (state: State, action: Action): State => {
   }
 }
 
-function addToRemoveQueue(toastId: string) {
-  if (toastTimeouts.has(toastId)) {
-    return
-  }
-
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId)
-    dispatch({
-      type: actionTypes.REMOVE_TOAST,
-      toastId: toastId,
-    })
-  }, TOAST_REMOVE_DELAY)
-
-  toastTimeouts.set(toastId, timeout)
-}
-
 const listeners: Array<(state: State) => void> = []
 
 let memoryState: State = { toasts: [] }
@@ -139,20 +135,21 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast(props: Toast) {
-  const toastId = genId()
+function toast({ ...props }: Toast) {
+  const id = genId()
 
   const update = (props: ToasterToast) =>
     dispatch({
       type: actionTypes.UPDATE_TOAST,
-      toast: { ...props, id: toastId },
+      toast: { ...props, id },
     })
-  const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId })
+  const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id })
 
   dispatch({
     type: actionTypes.ADD_TOAST,
     toast: {
       ...props,
+      id,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss()
@@ -160,8 +157,15 @@ function toast(props: Toast) {
     },
   })
 
+  // Auto-dismiss after 5 seconds for non-destructive toasts
+  if (props.variant !== "destructive") {
+    setTimeout(() => {
+      dismiss();
+    }, 5000); // 5 seconds
+  }
+
   return {
-    id: toastId,
+    id: id,
     dismiss,
     update,
   }
@@ -187,29 +191,23 @@ function useToast() {
   }
 }
 
-// Helper function for accessing toast outside of React components
-export const getToastFunction = () => {
+// Helper function to get a toast function that doesn't require react context
+export function getToastFunction() {
   return {
-    toast: (args: any) => {
-      toast(args)
-    }
-  };
-};
-
-toast.success = (message: string) => {
-  toast({
-    title: "Success",
-    description: message,
-    variant: "default",
-  })
+    success: (message: string) => sonnerToast.success(message),
+    error: (message: string) => sonnerToast.error(message),
+    info: (message: string) => sonnerToast.info(message),
+    warning: (message: string) => sonnerToast.warning(message),
+    custom: (message: string, options?: Partial<SonnerToast>) => sonnerToast(message, options),
+  }
 }
 
-toast.error = (message: string) => {
-  toast({
-    title: "Error",
-    description: message,
-    variant: "destructive",
-  })
+// Simplified toast for direct import
+const simplifiedToast = {
+  error: (description: string) => toast({ variant: "destructive", title: "Error", description }),
+  success: (description: string) => toast({ title: "Success", description }),
+  info: (description: string) => toast({ title: "Info", description }),
+  warning: (description: string) => toast({ title: "Warning", description }),
 }
 
-export { useToast, toast }
+export { useToast, toast, simplifiedToast }

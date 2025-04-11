@@ -797,9 +797,9 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                       </Button>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div>
-                        <label className="text-sm font-medium">Amount</label>
+                        <label className="text-sm font-medium block mb-2">Amount</label>
                         <Input 
                           type="number"
                           placeholder="Payment amount"
@@ -809,7 +809,7 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium">Currency</label>
+                        <label className="text-sm font-medium block mb-2">Currency</label>
                         <CurrencySelector
                           value={payment.currency || 'USD'}
                           onChange={(value) => updatePayment(payment.id, 'currency', value)}
@@ -817,12 +817,12 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                       </div>
                       
                       <div>
-                        <label className="text-sm font-medium">Status</label>
+                        <label className="text-sm font-medium block mb-2">Status</label>
                         <Select
                           value={payment.status || 'pending'}
                           onValueChange={(value) => updatePayment(payment.id, 'status', value)}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent>
@@ -833,9 +833,9 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium">Description</label>
+                        <label className="text-sm font-medium block mb-2">Description</label>
                         <Input 
                           placeholder="Payment description"
                           value={payment.description || ''}
@@ -844,7 +844,7 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                       </div>
                       
                       <div>
-                        <label className="text-sm font-medium">Date</label>
+                        <label className="text-sm font-medium block mb-2">Date</label>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button

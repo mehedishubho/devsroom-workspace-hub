@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -23,7 +24,7 @@ export function Toaster() {
               )}
             </div>
             {action}
-            <ToastClose />
+            <ToastClose className="absolute right-2 top-2 opacity-70 transition-opacity hover:opacity-100" />
           </Toast>
         )
       })}
