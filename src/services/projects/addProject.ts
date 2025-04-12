@@ -1,3 +1,4 @@
+
 import { Project } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -46,14 +47,21 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
           : projectData.endDate ? String(projectData.endDate) : null,
         budget: projectData.price || 0,
         status: ensureValidProjectStatus(projectData.status || 'active'),
-        original_status: projectData.originalStatus || projectData.status,
+        original_status: projectData.originalStatus || projectData.status || 'active',
         project_type_id: projectData.projectTypeId || null,
         project_category_id: projectData.projectCategoryId || null
       })
       .select()
       .single();
 
-    if (projectError) throw projectError;
+    if (projectError) {
+      // Check if the error is related to missing columns
+      if (projectError.message.includes("column") && projectError.message.includes("does not exist")) {
+        console.error("Database schema error:", projectError.message);
+        throw new Error("The database schema needs to be updated. Missing required columns in projects table.");
+      }
+      throw projectError;
+    }
     
     // Create project credentials
     if (projectData.credentials) {
@@ -133,7 +141,7 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       endDate: projectRecord.deadline_date ? new Date(projectRecord.deadline_date) : undefined,
       price: projectRecord.budget || 0,
       status: ensureValidProjectStatus(projectRecord.status),
-      originalStatus: projectRecord.original_status,
+      originalStatus: projectRecord.original_status || projectRecord.status,
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
       credentials: projectData.credentials || { username: '', password: '', notes: '' },
