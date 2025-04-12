@@ -324,12 +324,14 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          original_status: string | null
           progress: number | null
           project_category_id: string | null
           project_type_id: string | null
           start_date: string
           status: string
           updated_at: string
+          url: string | null
         }
         Insert: {
           budget?: number | null
@@ -339,12 +341,14 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          original_status?: string | null
           progress?: number | null
           project_category_id?: string | null
           project_type_id?: string | null
           start_date: string
           status: string
           updated_at?: string
+          url?: string | null
         }
         Update: {
           budget?: number | null
@@ -354,12 +358,14 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          original_status?: string | null
           progress?: number | null
           project_category_id?: string | null
           project_type_id?: string | null
           start_date?: string
           status?: string
           updated_at?: string
+          url?: string | null
         }
         Relationships: [
           {
@@ -390,6 +396,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_column: {
+        Args: {
+          table_name: string
+          column_name: string
+          column_type: string
+          default_value: string
+        }
+        Returns: undefined
+      }
+      column_exists: {
+        Args: { table_name: string; column_name: string }
+        Returns: boolean
+      }
       create_invoice_for_project: {
         Args: { project_id_param: string; invoice_date?: string }
         Returns: string

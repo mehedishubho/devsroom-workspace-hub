@@ -135,12 +135,14 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       clientId: projectRecord.client_id,
       clientName: clientData?.name || 'Unknown Client',
       description: projectRecord.description || '',
-      url: 'url' in projectRecord ? String(projectRecord.url) : '',
+      url: typeof projectRecord.url === 'string' ? projectRecord.url : '',
       startDate: new Date(projectRecord.start_date),
       endDate: projectRecord.deadline_date ? new Date(projectRecord.deadline_date) : undefined,
       price: projectRecord.budget || 0,
       status: ensureValidProjectStatus(projectRecord.status),
-      originalStatus: 'original_status' in projectRecord ? String(projectRecord.original_status) : projectRecord.status,
+      originalStatus: typeof projectRecord.original_status === 'string' 
+        ? projectRecord.original_status 
+        : projectRecord.status,
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
       credentials: projectData.credentials || { username: '', password: '', notes: '' },

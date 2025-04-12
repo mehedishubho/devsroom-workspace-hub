@@ -76,10 +76,10 @@ const ProjectDetails = () => {
           throw new Error("Project not found");
         }
 
-        const url = projectData.url ? String(projectData.url) : '';
-        const originalStatus = projectData.original_status ? 
-          String(projectData.original_status) : 
-          projectData.status ? String(projectData.status) : 'active';
+        const url = typeof projectData.url === 'string' ? projectData.url : '';
+        const originalStatus = typeof projectData.original_status === 'string' 
+          ? projectData.original_status 
+          : projectData.status ? String(projectData.status) : 'active';
 
         const { data: paymentsData } = await supabase
           .from('payments')

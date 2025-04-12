@@ -10,12 +10,10 @@ export const checkAndUpdateProjectsSchema = async (): Promise<boolean> => {
   try {
     // First, directly check if the url column exists in the database
     const { data: urlColumnCheck, error: urlCheckError } = await supabase
-      .from('information_schema.columns')
-      .select('column_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', 'projects')
-      .eq('column_name', 'url')
-      .maybeSingle();
+      .rpc('column_exists', { 
+        table_name: 'projects',
+        column_name: 'url'
+      });
 
     if (urlCheckError) {
       console.error("Error checking url column:", urlCheckError);
@@ -26,12 +24,10 @@ export const checkAndUpdateProjectsSchema = async (): Promise<boolean> => {
     
     // Check if the original_status column exists
     const { data: statusColumnCheck, error: statusCheckError } = await supabase
-      .from('information_schema.columns')
-      .select('column_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', 'projects')
-      .eq('column_name', 'original_status')
-      .maybeSingle();
+      .rpc('column_exists', { 
+        table_name: 'projects',
+        column_name: 'original_status'
+      });
     
     if (statusCheckError) {
       console.error("Error checking original_status column:", statusCheckError);
