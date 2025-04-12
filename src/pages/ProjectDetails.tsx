@@ -66,27 +66,29 @@ const ProjectDetails = () => {
         let hostingCredentials = { provider: '', credentials: { username: '', password: '' }, notes: '', url: '' };
         const otherAccess = [];
 
-        if (credentialsData) {
+        if (credentialsData && Array.isArray(credentialsData)) {
           for (const cred of credentialsData) {
             if (cred.platform === 'main') {
               mainCredentials = {
-                username: cred.username,
-                password: cred.password,
-                notes: cred.notes
+                username: cred.username || '',
+                password: cred.password || '',
+                notes: cred.notes || ''
               };
-            } else if (cred.platform.startsWith('hosting-')) {
+            } else if (cred.platform && cred.platform.startsWith('hosting-')) {
               const provider = cred.platform.replace('hosting-', '');
               hostingCredentials = {
                 provider,
                 credentials: {
-                  username: cred.username,
-                  password: cred.password
+                  username: cred.username || '',
+                  password: cred.password || ''
                 },
-                notes: cred.notes,
+                notes: cred.notes || '',
                 url: ''
               };
-            } else {
-              const [type, name] = cred.platform.split('-');
+            } else if (cred.platform) {
+              const parts = cred.platform.split('-');
+              const type = parts[0];
+              const name = parts.slice(1).join('-');
               
               if (type && name) {
                 otherAccess.push({
@@ -94,24 +96,24 @@ const ProjectDetails = () => {
                   type: type as 'email' | 'ftp' | 'ssh' | 'cms' | 'other',
                   name,
                   credentials: {
-                    username: cred.username,
-                    password: cred.password
+                    username: cred.username || '',
+                    password: cred.password || ''
                   },
-                  notes: cred.notes
+                  notes: cred.notes || ''
                 });
               }
             }
           }
         }
 
-        const payments = (paymentsData || []).map(payment => ({
+        const payments = Array.isArray(paymentsData) ? paymentsData.map(payment => ({
           id: payment.id,
           amount: payment.amount,
           date: new Date(payment.payment_date),
           description: payment.description || '',
           status: payment.payment_method as 'pending' | 'completed',
           currency: payment.currency || 'USD'
-        }));
+        })) : [];
 
         const formattedProject: Project = {
           id: projectData.id,
@@ -287,16 +289,16 @@ const ProjectDetails = () => {
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
                         <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.credentials.username || "No username provided"}
+                          {project.credentials?.username || "No username provided"}
                         </div>
                       </div>
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
                         <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.credentials.password || "No password provided"}
+                          {project.credentials?.password || "No password provided"}
                         </div>
                       </div>
-                      {project.credentials.notes && (
+                      {project.credentials?.notes && (
                         <div className="sm:col-span-2">
                           <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
                           <div className="text-sm">{project.credentials.notes}</div>
@@ -312,9 +314,9 @@ const ProjectDetails = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md">
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Provider</h4>
-                        <div className="text-sm">{project.hosting.provider || "No provider specified"}</div>
+                        <div className="text-sm">{project.hosting?.provider || "No provider specified"}</div>
                       </div>
-                      {project.hosting.url && (
+                      {project.hosting?.url && (
                         <div>
                           <h4 className="text-xs text-muted-foreground mb-1">URL</h4>
                           <a 
@@ -330,16 +332,16 @@ const ProjectDetails = () => {
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
                         <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.hosting.credentials.username || "No username provided"}
+                          {project.hosting?.credentials?.username || "No username provided"}
                         </div>
                       </div>
                       <div>
                         <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
                         <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.hosting.credentials.password || "No password provided"}
+                          {project.hosting?.credentials?.password || "No password provided"}
                         </div>
                       </div>
-                      {project.hosting.notes && (
+                      {project.hosting?.notes && (
                         <div className="sm:col-span-2">
                           <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
                           <div className="text-sm">{project.hosting.notes}</div>
@@ -367,13 +369,13 @@ const ProjectDetails = () => {
                             <div>
                               <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
                               <div className="font-mono text-sm bg-background p-2 rounded border">
-                                {access.credentials.username || "No username provided"}
+                                {access.credentials?.username || "No username provided"}
                               </div>
                             </div>
                             <div>
                               <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
                               <div className="font-mono text-sm bg-background p-2 rounded border">
-                                {access.credentials.password || "No password provided"}
+                                {access.credentials?.password || "No password provided"}
                               </div>
                             </div>
                             {access.notes && (
@@ -402,8 +404,12 @@ const ProjectDetails = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {project.payments.map((payment) => (
-                        <PaymentItem key={payment.id} payment={payment} />
+                      {project.payments.map((payment, index) => (
+                        <PaymentItem 
+                          key={payment.id || index} 
+                          payment={payment}
+                          index={index}
+                        />
                       ))}
                     </div>
                   )}

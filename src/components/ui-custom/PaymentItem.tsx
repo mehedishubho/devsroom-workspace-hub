@@ -16,7 +16,11 @@ interface PaymentItemProps {
 }
 
 const PaymentItem = ({ payment, index = 0 }: PaymentItemProps) => {
-  const { amount, date, description, status } = payment;
+  // Ensure payment properties have fallback values
+  const amount = payment?.amount || 0;
+  const date = payment?.date instanceof Date ? payment.date : new Date();
+  const description = payment?.description || '';
+  const status = payment?.status || 'pending';
 
   return (
     <motion.div
