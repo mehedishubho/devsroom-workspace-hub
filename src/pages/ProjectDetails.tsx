@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +24,31 @@ const ProjectDetails = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
+      case 'on-hold':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+      case 'in-progress':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
+    }
+  };
+
+  const getDisplayStatus = (status: string, originalStatus?: string) => {
+    if (status === 'active' && originalStatus === 'in-progress') {
+      return 'In Progress';
+    }
+    
+    return status.charAt(0).toUpperCase() + status.slice(1).replace(/-/g, ' ');
+  };
 
   useEffect(() => {
     const fetchProjectDetails = async () => {
@@ -66,7 +90,6 @@ const ProjectDetails = () => {
         let hostingCredentials = { provider: '', credentials: { username: '', password: '' }, notes: '', url: '' };
         const otherAccess = [];
 
-        // Ensure credentialsData is an array before iterating
         if (credentialsData && Array.isArray(credentialsData)) {
           for (const cred of credentialsData) {
             if (cred.platform === 'main') {
@@ -107,7 +130,6 @@ const ProjectDetails = () => {
           }
         }
 
-        // Ensure paymentsData is an array before mapping
         const payments = Array.isArray(paymentsData) ? paymentsData.map(payment => ({
           id: payment.id,
           amount: payment.amount,
@@ -117,17 +139,20 @@ const ProjectDetails = () => {
           currency: payment.currency || 'USD'
         })) : [];
 
+        payments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
         const formattedProject: Project = {
           id: projectData.id,
           name: projectData.name,
           clientId: projectData.client_id,
           clientName: projectData.clients?.name || 'Unknown Client',
           description: projectData.description || '',
-          url: '',
+          url: projectData.url || '',
           startDate: new Date(projectData.start_date),
           endDate: projectData.deadline_date ? new Date(projectData.deadline_date) : undefined,
           price: projectData.budget || 0,
           status: ensureValidStatus(projectData.status || 'active'),
+          originalStatus: projectData.original_status,
           projectTypeId: projectData.project_type_id,
           projectCategoryId: projectData.project_category_id,
           credentials: mainCredentials,
@@ -206,21 +231,6 @@ const ProjectDetails = () => {
   if (!project) {
     return null;
   }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
-      case 'on-hold':
-        return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
-    }
-  };
 
   return (
     <Dashboard>
@@ -463,7 +473,7 @@ const ProjectDetails = () => {
                       <span className="text-sm">Status</span>
                     </div>
                     <Badge className={getStatusColor(project.status)}>
-                      {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                      {getDisplayStatus(project.status, project.originalStatus)}
                     </Badge>
                   </div>
                   

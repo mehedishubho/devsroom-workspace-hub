@@ -1,4 +1,3 @@
-
 import { Project, Payment } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -29,6 +28,7 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
         name: updates.name,
         client_id: updates.clientId,
         description: updates.description,
+        url: updates.url || '',
         start_date: updates.startDate instanceof Date 
           ? format(updates.startDate, 'yyyy-MM-dd') 
           : updates.startDate ? String(updates.startDate) : null,
@@ -37,6 +37,7 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
           : updates.endDate ? String(updates.endDate) : null,
         budget: updates.price,
         status: ensureValidProjectStatus(updates.status || 'active'),
+        original_status: updates.originalStatus || updates.status,
         project_type_id: updates.projectTypeId || null,
         project_category_id: updates.projectCategoryId || null
       })
@@ -109,7 +110,7 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       }
     }
 
-    // Handle payments - delete existing and add new ones
+    // Handle payments with currency support
     if (updates.payments) {
       await supabase
         .from('payments')
@@ -117,39 +118,20 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
         .eq('project_id', id);
 
       if (updates.payments.length > 0) {
-        const dbPayments = updates.payments.map(payment => 
-          mapPaymentToDbPayment(payment, id)
-        );
+        const dbPayments = updates.payments.map(payment => ({
+          project_id: id,
+          amount: payment.amount || 0,
+          payment_date: payment.date instanceof Date 
+            ? format(payment.date, 'yyyy-MM-dd') 
+            : payment.date ? String(payment.date) : format(new Date(), 'yyyy-MM-dd'),
+          payment_method: payment.status || 'pending',
+          description: payment.description || '',
+          currency: payment.currency || 'USD'
+        }));
 
         await supabase
           .from('payments')
           .insert(dbPayments);
-      }
-    }
-
-    // Handle other access credentials
-    // First, remove existing ones
-    if (updates.otherAccess) {
-      await supabase
-        .from('project_credentials')
-        .delete()
-        .eq('project_id', id)
-        .not('platform', 'like', 'hosting-%')
-        .not('platform', 'eq', 'main');
-
-      // Then add new ones
-      if (updates.otherAccess.length > 0) {
-        const otherAccessCredentials = updates.otherAccess.map(access => ({
-          project_id: id,
-          platform: `${access.type}-${access.name}`,
-          username: access.credentials.username,
-          password: access.credentials.password,
-          notes: access.notes
-        }));
-
-        await supabase
-          .from('project_credentials')
-          .insert(otherAccessCredentials);
       }
     }
 
@@ -166,15 +148,18 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       .select('*')
       .eq('project_id', id);
 
-    // Map payments to the correct format
+    // Map payments to the correct format with currency support
     const mappedPayments: Payment[] = paymentData ? paymentData.map(payment => ({
       id: payment.id,
       amount: payment.amount,
       date: new Date(payment.payment_date),
-      description: payment.description,
+      description: payment.description || '',
       status: payment.payment_method as 'pending' | 'completed',
       currency: payment.currency || 'USD'
     })) : [];
+
+    // Sort payments by date
+    mappedPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // Construct and return the updated project object
     const updatedProject: Project = {
@@ -187,6 +172,7 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       endDate: projectRecord.deadline_date ? new Date(projectRecord.deadline_date) : undefined,
       price: projectRecord.budget || 0,
       status: ensureValidProjectStatus(projectRecord.status),
+      originalStatus: projectRecord.original_status,
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
       url: updates.url || '',

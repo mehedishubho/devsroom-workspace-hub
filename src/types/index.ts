@@ -81,6 +81,7 @@ export interface Project {
   price: number;
   payments: Payment[];
   status: 'active' | 'completed' | 'on-hold' | 'cancelled' | 'under-revision';
+  originalStatus?: string; // Added to store the UI display status
   projectTypeId?: string;
   projectCategoryId?: string;
   notes?: string;

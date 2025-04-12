@@ -132,6 +132,25 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     }
   }, [state, form]);
 
+  const mapFormStatusToProjectStatus = (formStatus: string): Project['status'] => {
+    switch (formStatus) {
+      case "completed":
+        return "completed";
+      case "on-hold":
+        return "on-hold";
+      case "cancelled":
+        return "cancelled";
+      case "under-revision":
+        return "under-revision";
+      case "in-progress":
+        return "active";
+      case "planning":
+      case "review":
+      default:
+        return "active";
+    }
+  };
+
   const handleSubmitForm = async (values: z.infer<typeof formSchema>) => {
     try {
       let clientId = values.clientId;
@@ -156,6 +175,7 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
       }
 
       const projectStatus = mapFormStatusToProjectStatus(values.projectStatus);
+      const originalStatus = values.projectStatus;
 
       const projectData = {
         ...(initialData || {}),
@@ -167,6 +187,7 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         startDate: values.startDate,
         endDate: values.deadlineDate,
         status: projectStatus,
+        originalStatus: originalStatus,
         price: values.budget ? parseFloat(values.budget) : 0,
         projectTypeId: selectedTypeId,
         projectCategoryId: selectedCategoryId,
@@ -210,24 +231,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     }
   };
 
-  const mapFormStatusToProjectStatus = (formStatus: string): Project['status'] => {
-    switch (formStatus) {
-      case "completed":
-        return "completed";
-      case "on-hold":
-        return "on-hold";
-      case "cancelled":
-        return "cancelled";
-      case "under-revision":
-        return "under-revision";
-      case "planning":
-      case "in-progress":
-      case "review":
-      default:
-        return "active";
-    }
-  };
-
   const handleNewClientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewClient(e.target.value);
   };
@@ -268,6 +271,9 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   const updatePayment = (id: string, field: keyof Payment, value: any) => {
     setPayments(payments.map(payment => {
       if (payment.id === id) {
+        if (field === 'currency' && (!value || typeof value !== 'string')) {
+          value = 'USD';
+        }
         return { ...payment, [field]: value };
       }
       return payment;

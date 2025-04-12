@@ -1,4 +1,3 @@
-
 import { Project } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -38,6 +37,7 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
         name: projectData.name,
         client_id: projectData.clientId,
         description: projectData.description || '',
+        url: projectData.url || '',
         start_date: projectData.startDate instanceof Date 
           ? format(projectData.startDate, 'yyyy-MM-dd') 
           : projectData.startDate ? String(projectData.startDate) : '',
@@ -46,6 +46,7 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
           : projectData.endDate ? String(projectData.endDate) : null,
         budget: projectData.price || 0,
         status: ensureValidProjectStatus(projectData.status || 'active'),
+        original_status: projectData.originalStatus || projectData.status,
         project_type_id: projectData.projectTypeId || null,
         project_category_id: projectData.projectCategoryId || null
       })
@@ -95,11 +96,18 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
         .insert(otherAccessCredentials);
     }
 
-    // Create payments
+    // Create payments with currency support
     if (projectData.payments && projectData.payments.length > 0) {
-      const dbPayments = projectData.payments.map(payment => 
-        mapPaymentToDbPayment(payment, projectRecord.id)
-      );
+      const dbPayments = projectData.payments.map(payment => ({
+        project_id: projectRecord.id,
+        amount: payment.amount || 0,
+        payment_date: payment.date instanceof Date 
+          ? format(payment.date, 'yyyy-MM-dd') 
+          : payment.date ? String(payment.date) : format(new Date(), 'yyyy-MM-dd'),
+        payment_method: payment.status || 'pending',
+        description: payment.description || '',
+        currency: payment.currency || 'USD'
+      }));
 
       await supabase
         .from('payments')
@@ -120,13 +128,14 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       clientId: projectRecord.client_id,
       clientName: clientData?.name || 'Unknown Client',
       description: projectRecord.description || '',
+      url: projectRecord.url || '',
       startDate: new Date(projectRecord.start_date),
       endDate: projectRecord.deadline_date ? new Date(projectRecord.deadline_date) : undefined,
       price: projectRecord.budget || 0,
       status: ensureValidProjectStatus(projectRecord.status),
+      originalStatus: projectRecord.original_status,
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
-      url: projectData.url || '',
       credentials: projectData.credentials || { username: '', password: '', notes: '' },
       hosting: projectData.hosting || { 
         provider: '', 
