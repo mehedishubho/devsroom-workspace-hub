@@ -8,26 +8,41 @@ import { toast } from "@/hooks/use-toast";
  */
 export const checkAndUpdateProjectsSchema = async (): Promise<boolean> => {
   try {
-    // First, check if the url column exists
-    const { data: urlColumnExists, error: urlCheckError } = await supabase
-      .rpc('column_exists', { table_name: 'projects', column_name: 'url' });
-    
+    // First, directly check if the url column exists in the database
+    const { data: urlColumnCheck, error: urlCheckError } = await supabase
+      .from('information_schema.columns')
+      .select('column_name')
+      .eq('table_schema', 'public')
+      .eq('table_name', 'projects')
+      .eq('column_name', 'url')
+      .maybeSingle();
+
     if (urlCheckError) {
       console.error("Error checking url column:", urlCheckError);
       return false;
     }
+
+    const urlColumnExists = !!urlColumnCheck;
     
     // Check if the original_status column exists
-    const { data: statusColumnExists, error: statusCheckError } = await supabase
-      .rpc('column_exists', { table_name: 'projects', column_name: 'original_status' });
+    const { data: statusColumnCheck, error: statusCheckError } = await supabase
+      .from('information_schema.columns')
+      .select('column_name')
+      .eq('table_schema', 'public')
+      .eq('table_name', 'projects')
+      .eq('column_name', 'original_status')
+      .maybeSingle();
     
     if (statusCheckError) {
       console.error("Error checking original_status column:", statusCheckError);
       return false;
     }
     
+    const statusColumnExists = !!statusColumnCheck;
+    
     // If both columns already exist, we're good
     if (urlColumnExists && statusColumnExists) {
+      console.log("Schema is up to date, all columns exist");
       return true;
     }
     
@@ -53,7 +68,7 @@ export const checkAndUpdateProjectsSchema = async (): Promise<boolean> => {
           table_name: 'projects', 
           column_name: 'original_status', 
           column_type: 'text', 
-          default_value: "status" 
+          default_value: "''" 
         });
       
       if (addStatusError) {

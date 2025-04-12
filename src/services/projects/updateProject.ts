@@ -1,4 +1,3 @@
-
 import { Project, Payment } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -180,7 +179,7 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       endDate: projectRecord.deadline_date ? new Date(projectRecord.deadline_date) : undefined,
       price: projectRecord.budget || 0,
       status: ensureValidProjectStatus(projectRecord.status),
-      originalStatus: projectRecord.original_status || projectRecord.status,
+      originalStatus: 'original_status' in projectRecord ? String(projectRecord.original_status) : projectRecord.status,
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
       url: updates.url || '',

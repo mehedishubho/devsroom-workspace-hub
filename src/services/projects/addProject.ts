@@ -1,4 +1,3 @@
-
 import { Project } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -136,12 +135,12 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       clientId: projectRecord.client_id,
       clientName: clientData?.name || 'Unknown Client',
       description: projectRecord.description || '',
-      url: projectRecord.url || '',
+      url: 'url' in projectRecord ? String(projectRecord.url) : '',
       startDate: new Date(projectRecord.start_date),
       endDate: projectRecord.deadline_date ? new Date(projectRecord.deadline_date) : undefined,
       price: projectRecord.budget || 0,
       status: ensureValidProjectStatus(projectRecord.status),
-      originalStatus: projectRecord.original_status || projectRecord.status,
+      originalStatus: 'original_status' in projectRecord ? String(projectRecord.original_status) : projectRecord.status,
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
       credentials: projectData.credentials || { username: '', password: '', notes: '' },

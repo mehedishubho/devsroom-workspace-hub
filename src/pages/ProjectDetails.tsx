@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -77,10 +76,10 @@ const ProjectDetails = () => {
           throw new Error("Project not found");
         }
 
-        // Check if needed columns exist in the project data
-        // If not present, we'll create default values
-        const url = 'url' in projectData ? projectData.url : '';
-        const originalStatus = 'original_status' in projectData ? projectData.original_status : projectData.status;
+        const url = projectData.url ? String(projectData.url) : '';
+        const originalStatus = projectData.original_status ? 
+          String(projectData.original_status) : 
+          projectData.status ? String(projectData.status) : 'active';
 
         const { data: paymentsData } = await supabase
           .from('payments')
