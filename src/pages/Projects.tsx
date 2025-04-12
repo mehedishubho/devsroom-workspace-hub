@@ -14,7 +14,7 @@ import ProjectForm from "@/components/ProjectForm";
 import PageTransition from "@/components/ui-custom/PageTransition";
 import { Project, Company, Client } from "@/types";
 import { useQuery } from "@tanstack/react-query";
-import { getProjects } from "@/services/projectService";
+import { getProjects } from "@/services/projects";
 import { getProjectTypes, getProjectCategories } from "@/services/projectTypeService";
 import { getCompanies } from "@/services/companyService";
 import { getClients } from "@/services/clientService";

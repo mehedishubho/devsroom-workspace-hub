@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import PaymentItem from "@/components/ui-custom/PaymentItem";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { updateProject } from "@/services/projectService";
+import { updateProject } from "@/services/projects";
 import { mapDbClientToClient } from "@/utils/dataMappers";
 
 const ProjectDetails = () => {
