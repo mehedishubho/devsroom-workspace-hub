@@ -27,12 +27,11 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   const [open, setOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(value || "USD");
   
-  // Ensure currencies is always an array with at least one entry
+  // Create a safe currencies array that is guaranteed to be an array
   const safeCurrencies = useMemo(() => {
-    if (!Array.isArray(currencies) || currencies.length === 0) {
-      return [{ code: "USD", name: "US Dollar", symbol: "$" }];
-    }
-    return currencies;
+    return Array.isArray(currencies) && currencies.length > 0 
+      ? currencies 
+      : [{ code: "USD", name: "US Dollar", symbol: "$" }];
   }, []);
 
   // Update internal state when prop changes
