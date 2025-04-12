@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +16,6 @@ import PaymentItem from "@/components/ui-custom/PaymentItem";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { updateProject } from "@/services/projects";
-import { mapDbClientToClient } from "@/utils/dataMappers";
 
 const ProjectDetails = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -63,6 +63,7 @@ const ProjectDetails = () => {
       }
 
       try {
+        // First, fetch the project data
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
           .select(`
@@ -74,6 +75,30 @@ const ProjectDetails = () => {
 
         if (projectError || !projectData) {
           throw new Error("Project not found");
+        }
+
+        // Then fetch project type and category names
+        let projectTypeName = '';
+        let projectCategoryName = '';
+
+        if (projectData.project_type_id) {
+          const { data: typeData } = await supabase
+            .from('project_types')
+            .select('name')
+            .eq('id', projectData.project_type_id)
+            .maybeSingle();
+          
+          projectTypeName = typeData?.name || '';
+        }
+
+        if (projectData.project_category_id) {
+          const { data: categoryData } = await supabase
+            .from('project_categories')
+            .select('name')
+            .eq('id', projectData.project_category_id)
+            .maybeSingle();
+          
+          projectCategoryName = categoryData?.name || '';
         }
 
         const url = typeof projectData.url === 'string' ? projectData.url : '';
@@ -160,6 +185,8 @@ const ProjectDetails = () => {
           originalStatus: originalStatus,
           projectTypeId: projectData.project_type_id,
           projectCategoryId: projectData.project_category_id,
+          projectType: projectTypeName,
+          projectCategory: projectCategoryName,
           credentials: mainCredentials,
           hosting: hostingCredentials,
           otherAccess,

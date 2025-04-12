@@ -1,3 +1,4 @@
+
 import { Project } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -30,6 +31,9 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       projectData.projectCategoryId = null;
     }
 
+    // Determine original status (for "In Progress" display)
+    const originalStatus = projectData.originalStatus || projectData.status || 'active';
+
     // First, create the project in the database
     const { data: projectRecord, error: projectError } = await supabase
       .from('projects')
@@ -46,7 +50,7 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
           : projectData.endDate ? String(projectData.endDate) : null,
         budget: projectData.price || 0,
         status: ensureValidProjectStatus(projectData.status || 'active'),
-        original_status: projectData.originalStatus || projectData.status || 'active',
+        original_status: originalStatus,
         project_type_id: projectData.projectTypeId || null,
         project_category_id: projectData.projectCategoryId || null
       })
@@ -128,6 +132,30 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       .eq('id', projectData.clientId)
       .single();
 
+    // Fetch project type and category names
+    let projectTypeName = '';
+    let projectCategoryName = '';
+    
+    if (projectData.projectTypeId) {
+      const { data: typeData } = await supabase
+        .from('project_types')
+        .select('name')
+        .eq('id', projectData.projectTypeId)
+        .maybeSingle();
+      
+      projectTypeName = typeData?.name || '';
+    }
+    
+    if (projectData.projectCategoryId) {
+      const { data: categoryData } = await supabase
+        .from('project_categories')
+        .select('name')
+        .eq('id', projectData.projectCategoryId)
+        .maybeSingle();
+      
+      projectCategoryName = categoryData?.name || '';
+    }
+
     // Construct and return the full project object
     const newProject: Project = {
       id: projectRecord.id,
@@ -145,6 +173,8 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
         : projectRecord.status,
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
+      projectType: projectTypeName,
+      projectCategory: projectCategoryName,
       credentials: projectData.credentials || { username: '', password: '', notes: '' },
       hosting: projectData.hosting || { 
         provider: '', 

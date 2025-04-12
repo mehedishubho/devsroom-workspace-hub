@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Project } from "@/types";
+import { Tag } from "lucide-react";
 
 interface ProjectCardProps {
   project: Project;
@@ -25,11 +26,19 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     }
   };
 
+  const getDisplayStatus = (status: string, originalStatus?: string) => {
+    if (status === 'active' && originalStatus === 'in-progress') {
+      return 'In Progress';
+    }
+    
+    return status.charAt(0).toUpperCase() + status.slice(1).replace(/-/g, ' ');
+  };
+
   const totalPaid = project.payments
     .filter(p => p.status === 'completed')
     .reduce((sum, payment) => sum + payment.amount, 0);
   
-  const percentPaid = (totalPaid / project.price) * 100;
+  const percentPaid = project.price > 0 ? (totalPaid / project.price) * 100 : 0;
 
   return (
     <Link to={`/project/${project.id}`}>
@@ -42,13 +51,31 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                 <p className="text-sm text-muted-foreground">{project.clientName}</p>
               </div>
               <Badge className={getStatusColor(project.status)}>
-                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                {getDisplayStatus(project.status, project.originalStatus)}
               </Badge>
             </div>
             
             <p className="text-sm text-muted-foreground line-clamp-2">
               {project.description || "No description available."}
             </p>
+
+            {/* Project Type and Category */}
+            {(project.projectTypeId || project.projectCategoryId) && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {project.projectTypeId && (
+                  <div className="flex items-center gap-1 text-xs bg-secondary/30 text-secondary-foreground px-2 py-1 rounded-full">
+                    <Tag className="h-3 w-3" />
+                    <span>{project.projectType || "Type"}</span>
+                  </div>
+                )}
+                {project.projectCategoryId && (
+                  <div className="flex items-center gap-1 text-xs bg-secondary/30 text-secondary-foreground px-2 py-1 rounded-full">
+                    <Tag className="h-3 w-3" />
+                    <span>{project.projectCategory || "Category"}</span>
+                  </div>
+                )}
+              </div>
+            )}
             
             <div className="space-y-2">
               <div className="flex justify-between text-sm">

@@ -26,6 +26,22 @@ const PaymentItem = ({ payment, index = 0 }: PaymentItemProps) => {
   const date = payment?.date instanceof Date ? payment.date : new Date();
   const description = payment?.description || '';
   const status = payment?.status || 'pending';
+  const currency = payment?.currency || 'USD';
+
+  // Get currency symbol
+  const getCurrencySymbol = (currencyCode: string): string => {
+    switch(currencyCode) {
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': return '¥';
+      case 'CNY': return '¥';
+      case 'INR': return '₹';
+      default: return '$';
+    }
+  };
+
+  const currencySymbol = getCurrencySymbol(currency);
 
   return (
     <motion.div
@@ -40,7 +56,9 @@ const PaymentItem = ({ payment, index = 0 }: PaymentItemProps) => {
             <DollarSign className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <div className="font-medium">${amount.toLocaleString()}</div>
+            <div className="font-medium">
+              {currencySymbol}{amount.toLocaleString()} <span className="text-xs text-muted-foreground">{currency}</span>
+            </div>
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <CalendarIcon className="h-3 w-3" />
               <span>{format(date, "MMM d, yyyy")}</span>

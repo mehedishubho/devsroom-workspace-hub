@@ -29,8 +29,8 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   
   // Create a safe currencies array that is guaranteed to be an array with at least one item
   const safeCurrencies = useMemo(() => {
-    if (!Array.isArray(currencies) || currencies.length === 0) {
-      console.log("Using fallback currency list");
+    if (!currencies || !Array.isArray(currencies) || currencies.length === 0) {
+      console.warn("Using fallback currency list");
       return [{ code: "USD", name: "US Dollar", symbol: "$" }];
     }
     return currencies;
@@ -46,7 +46,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   // Safe handler for currency selection
   const handleSelect = (currentValue: string) => {
     if (!currentValue || typeof currentValue !== 'string') {
-      console.log("Invalid currency value selected", currentValue);
+      console.warn("Invalid currency value selected", currentValue);
       return;
     }
     
@@ -58,7 +58,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   // Find selected currency with fallbacks
   const selectedOption = useMemo(() => {
     if (!safeCurrencies || !Array.isArray(safeCurrencies)) {
-      console.log("No valid currencies available");
+      console.warn("No valid currencies available");
       return { code: "USD", name: "US Dollar", symbol: "$" };
     }
     
@@ -74,7 +74,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
 
   // Make sure we have valid data for rendering
   if (!selectedOption) {
-    console.log("No selected currency option available");
+    console.warn("No selected currency option available");
     return null;
   }
 
@@ -102,7 +102,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
           <CommandInput placeholder="Search currency..." />
           <CommandEmpty>No currency found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-y-auto">
-            {safeCurrencies.map((currency) => (
+            {safeCurrencies && safeCurrencies.map((currency) => (
               <CommandItem
                 key={currency.code}
                 value={currency.code}

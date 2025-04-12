@@ -1,3 +1,4 @@
+
 import { Project, Payment } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -21,6 +22,9 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       updates.projectCategoryId = null;
     }
     
+    // Determine original status (for "In Progress" display)
+    const originalStatus = updates.originalStatus || updates.status || 'active';
+    
     // Update the main project record
     const { data: projectRecord, error: projectError } = await supabase
       .from('projects')
@@ -37,7 +41,7 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
           : updates.endDate ? String(updates.endDate) : null,
         budget: updates.price,
         status: ensureValidProjectStatus(updates.status || 'active'),
-        original_status: updates.originalStatus || updates.status || 'active',
+        original_status: originalStatus,
         project_type_id: updates.projectTypeId || null,
         project_category_id: updates.projectCategoryId || null
       })
@@ -148,6 +152,30 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       .select('name')
       .eq('id', updates.clientId || projectRecord.client_id)
       .single();
+    
+    // Fetch project type and category names
+    let projectTypeName = '';
+    let projectCategoryName = '';
+    
+    if (projectRecord.project_type_id) {
+      const { data: typeData } = await supabase
+        .from('project_types')
+        .select('name')
+        .eq('id', projectRecord.project_type_id)
+        .maybeSingle();
+      
+      projectTypeName = typeData?.name || '';
+    }
+    
+    if (projectRecord.project_category_id) {
+      const { data: categoryData } = await supabase
+        .from('project_categories')
+        .select('name')
+        .eq('id', projectRecord.project_category_id)
+        .maybeSingle();
+      
+      projectCategoryName = categoryData?.name || '';
+    }
 
     // Fetch payments for the project
     const { data: paymentData } = await supabase
@@ -184,6 +212,8 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
         : projectRecord.status,
       projectTypeId: projectRecord.project_type_id,
       projectCategoryId: projectRecord.project_category_id,
+      projectType: projectTypeName,
+      projectCategory: projectCategoryName,
       url: typeof projectRecord.url === 'string' ? projectRecord.url : '',
       credentials: updates.credentials || { username: '', password: '', notes: '' },
       hosting: updates.hosting || { 

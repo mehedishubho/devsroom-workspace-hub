@@ -1,3 +1,4 @@
+
 export interface Payment {
   id: string;
   amount: number;
@@ -84,6 +85,8 @@ export interface Project {
   originalStatus?: string; // Added to store the UI display status
   projectTypeId?: string;
   projectCategoryId?: string;
+  projectType?: string; // Name of the project type
+  projectCategory?: string; // Name of the project category
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
