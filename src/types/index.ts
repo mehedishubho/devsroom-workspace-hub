@@ -136,3 +136,15 @@ export interface PaymentWithCurrency extends Payment {
   currency: string;
   convertedAmount?: number; // Amount converted to base currency for calculation
 }
+
+// Add this function to help with type validation
+export function ensureValidStatus(status: string): "active" | "completed" | "on-hold" | "cancelled" | "under-revision" {
+  const validStatuses = ["active", "completed", "on-hold", "cancelled", "under-revision"];
+  
+  if (validStatuses.includes(status)) {
+    return status as "active" | "completed" | "on-hold" | "cancelled" | "under-revision";
+  }
+  
+  // Default to active if not valid
+  return "active";
+}

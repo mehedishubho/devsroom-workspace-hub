@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -7,7 +8,7 @@ import ProjectForm from "@/components/ProjectForm";
 import { Button } from "@/components/ui/button";
 import { Pencil, ArrowLeft, Calendar, DollarSign, Tag, FileText } from "lucide-react";
 import PageTransition from "@/components/ui-custom/PageTransition";
-import { Project } from "@/types";
+import { Project, ensureValidStatus } from "@/types";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -122,7 +123,7 @@ const ProjectDetails = () => {
           startDate: new Date(projectData.start_date),
           endDate: projectData.deadline_date ? new Date(projectData.deadline_date) : undefined,
           price: projectData.budget || 0,
-          status: projectData.status || 'active',
+          status: ensureValidStatus(projectData.status || 'active'),
           projectTypeId: projectData.project_type_id,
           projectCategoryId: projectData.project_category_id,
           credentials: mainCredentials,
