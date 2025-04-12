@@ -1,6 +1,7 @@
 
 import { Currency } from "@/types";
 
+// Ensure currencies is always defined and has at least one item
 export const currencies: Currency[] = [
   { code: "USD", name: "US Dollar", symbol: "$" },
   { code: "BDT", name: "Bangladeshi Taka", symbol: "৳" },
@@ -19,41 +20,57 @@ export const exchangeRates: Record<string, number> = {
   CAD: 0.74,   // 1 CAD = 0.74 USD
 };
 
-// Convert amount from source currency to target currency
+// Convert amount from source currency to target currency with error handling
 export const convertCurrency = (
-  amount: number,
-  fromCurrency: string,
+  amount: number, 
+  fromCurrency: string, 
   toCurrency: string = "USD"
 ): number => {
-  if (!amount || !fromCurrency || !toCurrency) return amount;
+  if (amount === undefined || amount === null) return 0;
+  if (!fromCurrency || !toCurrency) return amount;
   if (fromCurrency === toCurrency) return amount;
-
+  
+  // Get exchange rates with defaults
   const fromRate = exchangeRates[fromCurrency] || 1;
   const toRate = exchangeRates[toCurrency] || 1;
-
-  // Convert to USD first (base currency) then to target currency
-  const amountInUsd = amount * fromRate;
-  const convertedAmount = amountInUsd / toRate;
-
-  return parseFloat(convertedAmount.toFixed(2));
+  
+  try {
+    // Convert to USD first (base currency) then to target currency
+    const amountInUsd = amount * fromRate;
+    const convertedAmount = amountInUsd / toRate;
+    
+    return parseFloat(convertedAmount.toFixed(2));
+  } catch (error) {
+    console.error("Error converting currency:", error);
+    return amount;
+  }
 };
 
-// Format currency for display
+// Format currency for display with better error handling
 export const formatCurrency = (
-  amount: number,
+  amount: number = 0,
   currencyCode: string = "USD"
 ): string => {
-  const currency = currencies.find(c => c.code === currencyCode);
+  if (amount === undefined || amount === null) amount = 0;
+  
+  // Find the currency or use a default
+  const currency = Array.isArray(currencies) ? 
+    currencies.find(c => c.code === currencyCode) : null;
   
   if (!currency) {
     return `$${amount.toFixed(2)}`;
   }
-
+  
   return `${currency.symbol}${amount.toFixed(2)}`;
 };
 
-// Get currency symbol by code
+// Get currency symbol by code with error handling
 export const getCurrencySymbol = (currencyCode: string): string => {
-  const currency = currencies.find(c => c.code === currencyCode);
+  if (!currencyCode) return "$";
+  
+  // Find the currency or use a default
+  const currency = Array.isArray(currencies) ? 
+    currencies.find(c => c.code === currencyCode) : null;
+    
   return currency?.symbol || "$";
 };

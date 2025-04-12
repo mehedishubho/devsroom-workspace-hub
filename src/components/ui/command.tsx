@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { type DialogProps } from "@radix-ui/react-dialog"
 import { Command as CommandPrimitive } from "cmdk"
@@ -12,12 +11,11 @@ const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive>
 >(({ className, ...props }, ref) => {
-  // Ensure the children prop is valid and filtered to remove any null or undefined values
-  const safeProps = {
-    ...props,
-    children: React.Children.toArray(props.children).filter(Boolean)
-  };
-
+  // Create a safer version of children that is guaranteed to be an array with no falsy values
+  const safeChildren = React.useMemo(() => {
+    return React.Children.toArray(props.children || []).filter(Boolean);
+  }, [props.children]);
+  
   return (
     <CommandPrimitive
       ref={ref}
@@ -25,7 +23,8 @@ const Command = React.forwardRef<
         "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
         className
       )}
-      {...safeProps}
+      {...props}
+      children={safeChildren}
     />
   );
 })
@@ -97,8 +96,10 @@ const CommandGroup = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Group>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
 >(({ className, children, ...props }, ref) => {
-  // Ensure children is not undefined or null and filter out any falsy values
-  const safeChildren = React.Children.toArray(children).filter(Boolean);
+  // Create a safer version of children that is guaranteed to be an array with no falsy values
+  const safeChildren = React.useMemo(() => {
+    return React.Children.toArray(children || []).filter(Boolean);
+  }, [children]);
   
   return (
     <CommandPrimitive.Group
@@ -132,29 +133,21 @@ const CommandItem = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
 >(({ className, onSelect, ...props }, ref) => {
-  // Enhanced handler with comprehensive safety checks
-  const handleSelect = React.useCallback(
-    (currentValue: string) => {
-      // Make sure we don't call onSelect with undefined or non-string values
-      if (currentValue === undefined || currentValue === null || typeof currentValue !== 'string' || currentValue === '') {
-        return; // Exit early for invalid values
-      }
-      
+  // Create a safer version of onSelect that won't try to call with invalid values
+  const safeOnSelect = React.useCallback(
+    (value: string) => {
+      if (value === undefined || value === null) return;
       if (typeof onSelect === 'function') {
-        try {
-          onSelect(currentValue);
-        } catch (error) {
-          console.error("Error in CommandItem onSelect:", error);
-        }
+        onSelect(value);
       }
     },
     [onSelect]
   );
-
+  
   return (
     <CommandPrimitive.Item
       ref={ref}
-      onSelect={handleSelect}
+      onSelect={safeOnSelect}
       className={cn(
         "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
         className
