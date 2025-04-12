@@ -1,5 +1,4 @@
 
-
 import { Client, Project, Payment } from "@/types";
 import { format } from "date-fns";
 
@@ -74,4 +73,3 @@ export const ensureValidProjectStatus = (status: string): "active" | "completed"
   // Default to active if not valid
   return "active";
 };
-

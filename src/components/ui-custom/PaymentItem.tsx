@@ -16,8 +16,13 @@ interface PaymentItemProps {
 }
 
 const PaymentItem = ({ payment, index = 0 }: PaymentItemProps) => {
+  // Ensure payment exists before accessing its properties
+  if (!payment) {
+    return null;
+  }
+
   // Ensure payment properties have fallback values
-  const amount = payment?.amount || 0;
+  const amount = payment?.amount ?? 0;
   const date = payment?.date instanceof Date ? payment.date : new Date();
   const description = payment?.description || '';
   const status = payment?.status || 'pending';

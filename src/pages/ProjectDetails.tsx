@@ -66,6 +66,7 @@ const ProjectDetails = () => {
         let hostingCredentials = { provider: '', credentials: { username: '', password: '' }, notes: '', url: '' };
         const otherAccess = [];
 
+        // Ensure credentialsData is an array before iterating
         if (credentialsData && Array.isArray(credentialsData)) {
           for (const cred of credentialsData) {
             if (cred.platform === 'main') {
@@ -106,6 +107,7 @@ const ProjectDetails = () => {
           }
         }
 
+        // Ensure paymentsData is an array before mapping
         const payments = Array.isArray(paymentsData) ? paymentsData.map(payment => ({
           id: payment.id,
           amount: payment.amount,
@@ -259,7 +261,7 @@ const ProjectDetails = () => {
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Project URL</h3>
                     <a 
-                      href={project.url} 
+                      href={project.url || "#"} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-primary hover:underline break-all"

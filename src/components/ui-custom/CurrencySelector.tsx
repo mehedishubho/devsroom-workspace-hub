@@ -29,9 +29,10 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   
   // Ensure currencies is always an array with at least one entry
   const safeCurrencies = useMemo(() => {
-    return Array.isArray(currencies) && currencies.length > 0 
-      ? currencies 
-      : [{ code: "USD", name: "US Dollar", symbol: "$" }];
+    if (!Array.isArray(currencies) || currencies.length === 0) {
+      return [{ code: "USD", name: "US Dollar", symbol: "$" }];
+    }
+    return currencies;
   }, []);
 
   // Update internal state when prop changes
