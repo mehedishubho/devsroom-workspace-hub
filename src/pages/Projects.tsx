@@ -1,30 +1,19 @@
-
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Filter, ListFilter, X } from "lucide-react";
 import Dashboard from "@/components/layout/Dashboard";
-import SearchBar from "@/components/ui-custom/SearchBar";
-import ProjectCard from "@/components/ui-custom/ProjectCard";
-import EmptyState from "@/components/ui-custom/EmptyState";
-import AddProjectButton from "@/components/ui-custom/AddProjectButton";
 import ProjectForm from "@/components/ProjectForm";
 import PageTransition from "@/components/ui-custom/PageTransition";
-import { Project, Company, Client } from "@/types";
+import { Project } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { getProjects } from "@/services/projects";
 import { getProjectTypes, getProjectCategories } from "@/services/projectTypeService";
 import { getCompanies } from "@/services/companyService";
 import { getClients } from "@/services/clientService";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ProjectHeader } from "@/components/projects/ProjectHeader";
+import { ProjectFilters } from "@/components/projects/ProjectFilters";
+import { ProjectList } from "@/components/projects/ProjectList";
 
 const Projects = () => {
   const { toast } = useToast();
@@ -50,7 +39,6 @@ const Projects = () => {
   const [availableCategories, setAvailableCategories] = useState<any[]>([]);
   const [availableClients, setAvailableClients] = useState<any[]>([]);
 
-  // Fetch projects using React Query
   const { 
     data: projects = [], 
     isLoading: isLoadingProjects,
@@ -61,7 +49,6 @@ const Projects = () => {
     queryFn: getProjects
   });
 
-  // Fetch project types using React Query
   const {
     data: projectTypes = [],
     isLoading: isLoadingTypes
@@ -70,7 +57,6 @@ const Projects = () => {
     queryFn: getProjectTypes
   });
 
-  // Fetch project categories using React Query
   const {
     data: projectCategories = [],
     isLoading: isLoadingCategories
@@ -79,7 +65,6 @@ const Projects = () => {
     queryFn: getProjectCategories
   });
 
-  // Fetch companies
   const {
     data: companies = [],
     isLoading: isLoadingCompanies
@@ -88,7 +73,6 @@ const Projects = () => {
     queryFn: getCompanies
   });
 
-  // Fetch clients
   const {
     data: clients = [],
     isLoading: isLoadingClients
@@ -97,7 +81,6 @@ const Projects = () => {
     queryFn: getClients
   });
 
-  // Update URL params when filters change
   useEffect(() => {
     const params = new URLSearchParams();
     if (selectedType) params.set("type", selectedType);
@@ -107,9 +90,7 @@ const Projects = () => {
     setSearchParams(params);
   }, [selectedType, selectedCategory, selectedCompany, selectedClient, setSearchParams]);
 
-  // Filter projects based on search and filters
   const filteredProjects = projects.filter(project => {
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -120,22 +101,18 @@ const Projects = () => {
       if (!matchesSearch) return false;
     }
     
-    // Filter by project type
     if (selectedType && project.projectTypeId !== selectedType) {
       return false;
     }
     
-    // Filter by category
     if (selectedCategory && project.projectCategoryId !== selectedCategory) {
       return false;
     }
     
-    // Filter by client
     if (selectedClient && project.clientId !== selectedClient) {
       return false;
     }
     
-    // Filter by company (needs to find associated client's company)
     if (selectedCompany) {
       const client = clients.find(c => c.id === project.clientId);
       if (!client || client.companyId !== selectedCompany) {
@@ -146,7 +123,6 @@ const Projects = () => {
     return true;
   });
 
-  // Update available categories when selected type changes
   useEffect(() => {
     if (selectedType) {
       const categories = projectCategories.filter(
@@ -154,7 +130,6 @@ const Projects = () => {
       );
       setAvailableCategories(categories);
       
-      // Reset the selected category if it's no longer available
       if (selectedCategory) {
         const categoryExists = categories.some(c => c.id === selectedCategory);
         if (!categoryExists) {
@@ -166,7 +141,6 @@ const Projects = () => {
     }
   }, [selectedType, selectedCategory, projectCategories]);
 
-  // Update available clients when selected company changes
   useEffect(() => {
     if (selectedCompany) {
       const filteredClients = clients.filter(
@@ -174,7 +148,6 @@ const Projects = () => {
       );
       setAvailableClients(filteredClients);
       
-      // Reset the selected client if it's no longer available
       if (selectedClient) {
         const clientExists = filteredClients.some(c => c.id === selectedClient);
         if (!clientExists) {
@@ -200,7 +173,6 @@ const Projects = () => {
 
   const handleSaveProject = async (data: Project) => {
     try {
-      // Note: Implementation in ProjectForm component
       setIsFormOpen(false);
       refetchProjects();
     } catch (error) {
@@ -225,7 +197,6 @@ const Projects = () => {
     setSearchParams({});
   };
 
-  // Show loading state
   if (isLoadingProjects || isLoadingTypes || isLoadingCategories || isLoadingCompanies || isLoadingClients) {
     return (
       <Dashboard>
@@ -241,7 +212,6 @@ const Projects = () => {
     );
   }
 
-  // Show error state
   if (isProjectsError) {
     return (
       <Dashboard>
@@ -264,148 +234,38 @@ const Projects = () => {
     );
   }
 
+  const hasFilters = !!(searchQuery || selectedType || selectedCategory || selectedCompany || selectedClient);
+
   return (
     <Dashboard>
       <PageTransition>
         <div className="space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">All Projects</h1>
-              <p className="text-muted-foreground mt-1">
-                View and manage all your freelance projects
-              </p>
-            </div>
-            <AddProjectButton onClick={handleAddProject} />
-          </div>
+          <ProjectHeader onAddProject={() => setIsFormOpen(true)} />
+          
+          <ProjectFilters
+            isFilterOpen={isFilterOpen}
+            onFilterToggle={toggleFilter}
+            onSearch={handleSearch}
+            selectedType={selectedType}
+            setSelectedType={setSelectedType}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedCompany={selectedCompany}
+            setSelectedCompany={setSelectedCompany}
+            selectedClient={selectedClient}
+            setSelectedClient={setSelectedClient}
+            companies={companies}
+            availableClients={availableClients}
+            projectTypes={projectTypes}
+            availableCategories={availableCategories}
+            onClearFilters={clearFilters}
+          />
 
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <SearchBar onSearch={handleSearch} placeholder="Search by project name, client, or URL..." />
-              </div>
-              <Button
-                variant={isFilterOpen ? "default" : "outline"}
-                onClick={toggleFilter}
-                className="flex items-center gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-              </Button>
-            </div>
-
-            {isFilterOpen && (
-              <div className="bg-secondary/10 p-4 rounded-lg space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">Filter Projects</h3>
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
-                    <X className="h-4 w-4 mr-1" /> Clear
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Company</label>
-                    <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a company" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {companies.map((company) => (
-                          <SelectItem key={company.id} value={company.id}>
-                            {company.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Client</label>
-                    <Select 
-                      value={selectedClient} 
-                      onValueChange={setSelectedClient}
-                      disabled={availableClients.length === 0}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a client" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableClients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Project Type</label>
-                    <Select value={selectedType} onValueChange={setSelectedType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projectTypes.map((type) => (
-                          <SelectItem key={type.id} value={type.id}>
-                            {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Category</label>
-                    <Select 
-                      value={selectedCategory} 
-                      onValueChange={setSelectedCategory}
-                      disabled={availableCategories.length === 0}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {filteredProjects.length === 0 ? (
-            <EmptyState
-              title={searchQuery || selectedType || selectedCategory || selectedCompany || selectedClient ? "No matching projects" : "No projects yet"}
-              description={
-                searchQuery || selectedType || selectedCategory || selectedCompany || selectedClient
-                  ? "Try adjusting your search query or filters."
-                  : "Create your first project to get started."
-              }
-              icon={searchQuery || selectedType || selectedCategory || selectedCompany || selectedClient ? <ListFilter className="h-6 w-6 text-primary" /> : <PlusCircle className="h-6 w-6 text-primary" />}
-              action={
-                searchQuery || selectedType || selectedCategory || selectedCompany || selectedClient
-                  ? undefined
-                  : {
-                      label: "Add Project",
-                      onClick: handleAddProject,
-                    }
-              }
-            />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProjects.map((project) => (
-                <ProjectCard 
-                  key={project.id} 
-                  project={project}
-                />
-              ))}
-            </div>
-          )}
+          <ProjectList
+            projects={filteredProjects}
+            hasFilters={hasFilters}
+            onAddProject={() => setIsFormOpen(true)}
+          />
         </div>
 
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
