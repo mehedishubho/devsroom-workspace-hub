@@ -62,15 +62,15 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
             </p>
 
             {/* Project Type and Category */}
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-2">
               {project.projectType && (
-                <div className="flex items-center gap-1 text-xs bg-secondary/30 text-secondary-foreground px-2 py-1 rounded-full">
+                <div className="flex items-center gap-1.5 text-xs bg-secondary/20 text-secondary-foreground px-2.5 py-1 rounded-full">
                   <Tag className="h-3 w-3" />
                   <span>{project.projectType}</span>
                 </div>
               )}
               {project.projectCategory && (
-                <div className="flex items-center gap-1 text-xs bg-secondary/30 text-secondary-foreground px-2 py-1 rounded-full">
+                <div className="flex items-center gap-1.5 text-xs bg-secondary/20 text-secondary-foreground px-2.5 py-1 rounded-full">
                   <Tag className="h-3 w-3" />
                   <span>{project.projectCategory}</span>
                 </div>
@@ -90,7 +90,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
               
               <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-primary rounded-full" 
+                  className="h-full bg-primary rounded-full transition-all duration-500 ease-out" 
                   style={{ width: `${percentPaid}%` }}
                 ></div>
               </div>
