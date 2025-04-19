@@ -35,7 +35,7 @@ interface CommandDialogProps extends DialogProps {}
 
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   // Make sure children is not undefined
-  const safeChildren = React.Children.toArray(children).filter(Boolean);
+  const safeChildren = React.Children.toArray(children || []).filter(Boolean);
   
   return (
     <Dialog {...props}>
