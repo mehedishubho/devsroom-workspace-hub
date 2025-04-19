@@ -20,6 +20,11 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       throw new Error("Client is required");
     }
     
+    console.log("Adding project with type/category:", {
+      projectTypeId: projectData.projectTypeId,
+      projectCategoryId: projectData.projectCategoryId
+    });
+    
     // Validate project type and category IDs (ensure they're valid UUIDs)
     if (projectData.projectTypeId && !isValidUUID(projectData.projectTypeId)) {
       console.warn("Invalid project type ID format, will be set to null");

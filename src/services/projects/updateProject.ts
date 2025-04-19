@@ -1,4 +1,3 @@
-
 import { Project, Payment } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -11,6 +10,11 @@ import { isValidUUID } from "./utils";
  */
 export const updateProject = async (id: string, updates: Partial<Project>): Promise<Project | null> => {
   try {
+    console.log("Updating project with type/category:", {
+      projectTypeId: updates.projectTypeId,
+      projectCategoryId: updates.projectCategoryId
+    });
+    
     // Validate project type and category IDs
     if (updates.projectTypeId && !isValidUUID(updates.projectTypeId)) {
       console.warn("Invalid project type ID format, will be set to null");
