@@ -23,7 +23,7 @@ const PaymentItem = ({ payment, index = 0 }: PaymentItemProps) => {
 
   // Ensure payment properties have fallback values
   const amount = payment?.amount ?? 0;
-  const date = payment?.date instanceof Date ? payment.date : new Date();
+  const date = payment?.date instanceof Date ? payment.date : new Date(payment?.date || Date.now());
   const description = payment?.description || '';
   const status = payment?.status || 'pending';
   const currency = payment?.currency || 'USD';

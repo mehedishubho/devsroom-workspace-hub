@@ -13,6 +13,12 @@ export const getProjects = async (): Promise<Project[]> => {
       *,
       clients (
         name
+      ),
+      project_types (
+        name
+      ),
+      project_categories (
+        name
       )
     `)
     .order("created_at", { ascending: false });
@@ -31,14 +37,11 @@ export const getProjects = async (): Promise<Project[]> => {
   return data.map((item) => {
     // Handle project type and category IDs
     const projectTypeId = isValidUUID(item.project_type_id) ? item.project_type_id : null;
-    if (!projectTypeId) {
-      console.warn("Invalid project type ID format, will be set to null");
-    }
-
     const projectCategoryId = isValidUUID(item.project_category_id) ? item.project_category_id : null;
-    if (!projectCategoryId) {
-      console.warn("Invalid project category ID format, will be set to null");
-    }
+
+    // Get project type and category names from the joined data
+    const projectType = item.project_types?.name || "";
+    const projectCategory = item.project_categories?.name || "";
 
     return {
       id: item.id,
@@ -46,13 +49,16 @@ export const getProjects = async (): Promise<Project[]> => {
       clientId: item.client_id,
       clientName: item.clients?.name || "Unknown Client",
       description: item.description || "",
-      url: "",
+      url: item.url || "",
       startDate: new Date(item.start_date),
       endDate: item.deadline_date ? new Date(item.deadline_date) : undefined,
       price: item.budget || 0,
       status: ensureValidStatus(item.status || "active"),
+      originalStatus: item.original_status || "",
       projectTypeId,
       projectCategoryId,
+      projectType,
+      projectCategory,
       credentials: {
         username: "",
         password: "",

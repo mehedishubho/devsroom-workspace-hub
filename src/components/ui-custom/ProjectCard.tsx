@@ -34,9 +34,11 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     return status.charAt(0).toUpperCase() + status.slice(1).replace(/-/g, ' ');
   };
 
-  const totalPaid = project.payments
+  // Calculate payment statistics
+  const payments = project.payments || [];
+  const totalPaid = payments
     .filter(p => p.status === 'completed')
-    .reduce((sum, payment) => sum + payment.amount, 0);
+    .reduce((sum, payment) => sum + (payment.amount || 0), 0);
   
   const percentPaid = project.price > 0 ? (totalPaid / project.price) * 100 : 0;
 
@@ -60,22 +62,20 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
             </p>
 
             {/* Project Type and Category */}
-            {(project.projectTypeId || project.projectCategoryId) && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {project.projectTypeId && (
-                  <div className="flex items-center gap-1 text-xs bg-secondary/30 text-secondary-foreground px-2 py-1 rounded-full">
-                    <Tag className="h-3 w-3" />
-                    <span>{project.projectType || "Type"}</span>
-                  </div>
-                )}
-                {project.projectCategoryId && (
-                  <div className="flex items-center gap-1 text-xs bg-secondary/30 text-secondary-foreground px-2 py-1 rounded-full">
-                    <Tag className="h-3 w-3" />
-                    <span>{project.projectCategory || "Category"}</span>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {project.projectType && (
+                <div className="flex items-center gap-1 text-xs bg-secondary/30 text-secondary-foreground px-2 py-1 rounded-full">
+                  <Tag className="h-3 w-3" />
+                  <span>{project.projectType}</span>
+                </div>
+              )}
+              {project.projectCategory && (
+                <div className="flex items-center gap-1 text-xs bg-secondary/30 text-secondary-foreground px-2 py-1 rounded-full">
+                  <Tag className="h-3 w-3" />
+                  <span>{project.projectCategory}</span>
+                </div>
+              )}
+            </div>
             
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
