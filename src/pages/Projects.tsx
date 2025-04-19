@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import Dashboard from "@/components/layout/Dashboard";
 import ProjectForm from "@/components/ProjectForm";
 import PageTransition from "@/components/ui-custom/PageTransition";
@@ -17,7 +19,6 @@ import { ProjectList } from "@/components/projects/ProjectList";
 
 const Projects = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [searchQuery, setSearchQuery] = useState("");

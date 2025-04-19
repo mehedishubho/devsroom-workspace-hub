@@ -1,5 +1,5 @@
 
-import { AddProjectButton } from "@/components/ui-custom/AddProjectButton";
+import AddProjectButton from "@/components/ui-custom/AddProjectButton";
 
 interface ProjectHeaderProps {
   onAddProject: () => void;
