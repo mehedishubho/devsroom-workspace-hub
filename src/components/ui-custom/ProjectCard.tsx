@@ -30,7 +30,6 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     if (status === 'active' && originalStatus === 'in-progress') {
       return 'In Progress';
     }
-    
     return status.charAt(0).toUpperCase() + status.slice(1).replace(/-/g, ' ');
   };
 
@@ -43,16 +42,16 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
   const percentPaid = project.price > 0 ? (totalPaid / project.price) * 100 : 0;
 
   return (
-    <Link to={`/project/${project.id}`}>
+    <Link to={`/project/${project.id}`} className="block h-full">
       <Card className="h-full transition-all hover:shadow-md hover:border-primary/20 bg-white/70 dark:bg-black/20 backdrop-blur-sm">
         <CardContent className="p-6">
           <div className="space-y-4">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <h3 className="font-medium text-lg">{project.name}</h3>
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <h3 className="font-medium text-lg leading-tight mb-1">{project.name}</h3>
                 <p className="text-sm text-muted-foreground">{project.clientName}</p>
               </div>
-              <Badge className={getStatusColor(project.status)}>
+              <Badge variant="secondary" className={getStatusColor(project.status)}>
                 {getDisplayStatus(project.status, project.originalStatus)}
               </Badge>
             </div>
@@ -61,16 +60,15 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
               {project.description || "No description available."}
             </p>
 
-            {/* Project Type and Category */}
             <div className="flex flex-wrap gap-2">
               {project.projectType && (
-                <div className="flex items-center gap-1.5 text-xs bg-secondary/20 text-secondary-foreground px-2.5 py-1 rounded-full">
+                <div className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full">
                   <Tag className="h-3 w-3" />
                   <span>{project.projectType}</span>
                 </div>
               )}
               {project.projectCategory && (
-                <div className="flex items-center gap-1.5 text-xs bg-secondary/20 text-secondary-foreground px-2.5 py-1 rounded-full">
+                <div className="flex items-center gap-1.5 text-xs bg-secondary/10 text-secondary-foreground px-2.5 py-1 rounded-full">
                   <Tag className="h-3 w-3" />
                   <span>{project.projectCategory}</span>
                 </div>
@@ -88,16 +86,25 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                 <span className="font-medium">${totalPaid.toLocaleString()} ({percentPaid.toFixed(0)}%)</span>
               </div>
               
-              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-secondary/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-primary rounded-full transition-all duration-500 ease-out" 
                   style={{ width: `${percentPaid}%` }}
-                ></div>
+                />
               </div>
             </div>
+
+            {payments.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Recent Payment:</p>
+                <div className="text-xs">
+                  ${payments[0].amount.toLocaleString()} - {format(new Date(payments[0].date), "MMM d, yyyy")}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
-        <CardFooter className="px-6 py-4 border-t bg-gray-50/70 dark:bg-black/10">
+        <CardFooter className="px-6 py-4 border-t bg-muted/40">
           <div className="flex justify-between w-full text-xs text-muted-foreground">
             <span>Start: {format(new Date(project.startDate), "MMM d, yyyy")}</span>
             {project.endDate && (

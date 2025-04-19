@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -18,7 +17,6 @@ import EmptyState from "@/components/ui-custom/EmptyState";
 const DashboardPage = () => {
   const navigate = useNavigate();
   
-  // Fetch dashboard stats
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: getDashboardStats
@@ -81,26 +79,26 @@ const DashboardPage = () => {
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
                 <FolderOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.totalProjects || 0}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   {stats?.activeProjects || 0} active projects
                 </p>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Completed Projects</CardTitle>
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.completedProjects || 0}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   {stats?.totalProjects 
                     ? ((stats.completedProjects / stats.totalProjects) * 100).toFixed(0) 
                     : 0}% completion rate
@@ -109,20 +107,20 @@ const DashboardPage = () => {
             </Card>
             
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.totalClients || 0}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   Across multiple companies
                 </p>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
@@ -130,22 +128,21 @@ const DashboardPage = () => {
                 <div className="text-2xl font-bold">
                   ${(stats?.totalRevenue || 0).toLocaleString()}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   ${(stats?.paidRevenue || 0).toLocaleString()} received
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Charts Section */}
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="col-span-1">
               <CardHeader>
                 <CardTitle>Project Status</CardTitle>
                 <CardDescription>Distribution of project statuses</CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="h-[200px]">
+              <CardContent>
+                <div className="h-[300px] w-full flex items-center justify-center">
                   {projectStatusData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -155,7 +152,6 @@ const DashboardPage = () => {
                           cy="50%"
                           innerRadius={60}
                           outerRadius={80}
-                          fill="#8884d8"
                           paddingAngle={5}
                           dataKey="value"
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -165,13 +161,11 @@ const DashboardPage = () => {
                           ))}
                         </Pie>
                         <Tooltip />
-                        <Legend />
+                        <Legend verticalAlign="bottom" height={36} />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-muted-foreground">No project data available</p>
-                    </div>
+                    <p className="text-muted-foreground">No project data available</p>
                   )}
                 </div>
               </CardContent>
@@ -182,20 +176,21 @@ const DashboardPage = () => {
                 <CardTitle>Revenue Overview</CardTitle>
                 <CardDescription>Paid vs Unpaid Revenue</CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="h-[200px]">
+              <CardContent>
+                <div className="h-[300px] w-full">
                   {stats?.totalRevenue ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={revenueData}>
+                      <BarChart data={revenueData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
                         <Tooltip 
                           formatter={(value) => [`$${value.toLocaleString()}`, 'Amount']}
                           contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '0.375rem' }}
                         />
-                        <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                           <Cell key="cell-0" fill="#10b981" />
                           <Cell key="cell-1" fill="#f59e0b" />
                         </Bar>
-                        <Legend />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
