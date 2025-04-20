@@ -317,235 +317,125 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmitForm)} className="space-y-8 w-full max-w-4xl">
-        <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="details">Project Details</TabsTrigger>
-            <TabsTrigger value="access">Access & Credentials</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
+      <form
+        onSubmit={form.handleSubmit(handleSubmitForm)}
+        className="space-y-8 w-full max-w-4xl mx-auto px-2 sm:px-4"
+      >
+        <Tabs
+          defaultValue="details"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
+          <TabsList className="grid grid-cols-3 w-full gap-2 sm:gap-0">
+            <TabsTrigger value="details" className="py-3 text-xs sm:text-base">
+              Project Details
+            </TabsTrigger>
+            <TabsTrigger value="access" className="py-3 text-xs sm:text-base">
+              Access & Credentials
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="py-3 text-xs sm:text-base">
+              Payments
+            </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="details" className="space-y-6 pt-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter project name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="clientId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Client</FormLabel>
-                  <Select
-                    onValueChange={handleClientChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a client" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clientsLoading ? (
-                        <SelectItem value="loading" disabled>Loading clients...</SelectItem>
-                      ) : clients.length > 0 ? (
-                        clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-clients" disabled>No clients found</SelectItem>
-                      )}
-                      <SelectItem value="new">+ Add new client</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {showNewClientInput && (
-                    <Input
-                      placeholder="Enter new client name"
-                      value={newClient}
-                      onChange={handleNewClientChange}
-                      className="mt-2"
-                    />
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <ProjectTypeSelector
-              selectedTypeId={selectedTypeId}
-              selectedCategoryId={selectedCategoryId}
-              onTypeChange={setSelectedTypeId}
-              onCategoryChange={setSelectedCategoryId}
-            />
-
-            <FormField
-              control={form.control}
-              name="url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter project description"
-                      className="min-h-32"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Start Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="deadlineDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Deadline (Optional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value || undefined}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="projectStatus"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Name</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
+                        <Input placeholder="Enter project name" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="planning">Planning</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="review">Review</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="on-hold">On Hold</SelectItem>
-                        <SelectItem value="under-revision">Under Revision</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="clientId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client</FormLabel>
+                      <Select
+                        onValueChange={handleClientChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a client" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {clientsLoading ? (
+                            <SelectItem value="loading" disabled>
+                              Loading clients...
+                            </SelectItem>
+                          ) : clients.length > 0 ? (
+                            clients.map((client) => (
+                              <SelectItem key={client.id} value={client.id}>
+                                {client.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-clients" disabled>
+                              No clients found
+                            </SelectItem>
+                          )}
+                          <SelectItem value="new">+ Add new client</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {showNewClientInput && (
+                        <Input
+                          placeholder="Enter new client name"
+                          value={newClient}
+                          onChange={handleNewClientChange}
+                          className="mt-2"
+                        />
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ProjectTypeSelector
+                  selectedTypeId={selectedTypeId}
+                  selectedCategoryId={selectedCategoryId}
+                  onTypeChange={setSelectedTypeId}
+                  onCategoryChange={setSelectedCategoryId}
+                />
+                <FormField
+                  control={form.control}
+                  name="url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
-                name="budget"
+                name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Budget (Optional)</FormLabel>
+                    <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Enter budget amount"
+                      <Textarea
+                        placeholder="Enter project description"
+                        className="min-h-32"
                         {...field}
                       />
                     </FormControl>
@@ -553,9 +443,138 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Start Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "pl-3 text-left font-normal w-full",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date("1900-01-01")}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="deadlineDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Deadline (Optional)</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "pl-3 text-left font-normal w-full",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value || undefined}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date("1900-01-01")}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="projectStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="planning">Planning</SelectItem>
+                          <SelectItem value="in-progress">In Progress</SelectItem>
+                          <SelectItem value="review">Review</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="on-hold">On Hold</SelectItem>
+                          <SelectItem value="under-revision">Under Revision</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="budget"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Budget (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Enter budget amount"
+                          min={0}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="access" className="space-y-6 pt-4">
             <div className="space-y-6">
               <div className="bg-muted/40 p-4 rounded-md space-y-4">
@@ -599,7 +618,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                   )}
                 />
               </div>
-              
               <div className="bg-muted/40 p-4 rounded-md space-y-4">
                 <h3 className="text-lg font-medium">Hosting Information</h3>
                 <FormField
@@ -614,7 +632,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="hostingUrl"
@@ -627,7 +644,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                     </FormItem>
                   )}
                 />
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -654,7 +670,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                     )}
                   />
                 </div>
-                
                 <FormField
                   control={form.control}
                   name="hostingNotes"
@@ -668,13 +683,12 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                   )}
                 />
               </div>
-              
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium">Additional Access</h3>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={addOtherAccess}
                     size="sm"
                     className="flex items-center gap-1"
@@ -682,43 +696,49 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                     <Plus className="h-4 w-4" /> Add Access
                   </Button>
                 </div>
-                
                 {otherAccess.length === 0 ? (
                   <div className="text-center py-6 border border-dashed rounded-md">
-                    <p className="text-muted-foreground">No additional access added</p>
+                    <p className="text-muted-foreground">
+                      No additional access added
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {otherAccess.map((access, index) => (
-                      <div key={access.id} className="bg-muted/40 p-4 rounded-md space-y-4">
+                      <div
+                        key={access.id}
+                        className="bg-muted/40 p-4 rounded-md space-y-4"
+                      >
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">Access #{index + 1}</h4>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => removeOtherAccess(access.id)}
                             className="text-destructive"
                           >
                             <Trash className="h-4 w-4" />
                           </Button>
                         </div>
-                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-medium">Name</label>
-                            <Input 
+                            <Input
                               placeholder="Name (e.g. Email Account)"
                               value={access.name}
-                              onChange={(e) => updateOtherAccess(access.id, "name", e.target.value)}
+                              onChange={(e) =>
+                                updateOtherAccess(access.id, "name", e.target.value)
+                              }
                             />
                           </div>
-                          
                           <div>
                             <label className="text-sm font-medium">Type</label>
-                            <Select 
+                            <Select
                               value={access.type}
-                              onValueChange={(value) => updateOtherAccess(access.id, "type", value)}
+                              onValueChange={(value) =>
+                                updateOtherAccess(access.id, "type", value)
+                              }
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select type" />
@@ -733,32 +753,36 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                             </Select>
                           </div>
                         </div>
-                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-medium">Username</label>
-                            <Input 
+                            <Input
                               placeholder="Username"
                               value={access.credentials.username}
-                              onChange={(e) => updateOtherAccess(access.id, "username", e.target.value)}
+                              onChange={(e) =>
+                                updateOtherAccess(access.id, "username", e.target.value)
+                              }
                             />
                           </div>
                           <div>
                             <label className="text-sm font-medium">Password</label>
-                            <Input 
+                            <Input
                               placeholder="Password"
                               value={access.credentials.password}
-                              onChange={(e) => updateOtherAccess(access.id, "password", e.target.value)}
+                              onChange={(e) =>
+                                updateOtherAccess(access.id, "password", e.target.value)
+                              }
                             />
                           </div>
                         </div>
-                        
                         <div>
                           <label className="text-sm font-medium">Notes</label>
-                          <Textarea 
+                          <Textarea
                             placeholder="Additional notes"
                             value={access.notes || ""}
-                            onChange={(e) => updateOtherAccess(access.id, "notes", e.target.value)}
+                            onChange={(e) =>
+                              updateOtherAccess(access.id, "notes", e.target.value)
+                            }
                           />
                         </div>
                       </div>
@@ -768,136 +792,173 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
               </div>
             </div>
           </TabsContent>
-          
-          <TabsContent value="payments" className="space-y-6 pt-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Payment Schedule</h3>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={addPayment}
-                className="flex items-center gap-1"
-              >
-                <Plus className="h-4 w-4" /> Add Payment
-              </Button>
-            </div>
-            
-            {payments.length === 0 ? (
-              <div className="text-center py-6 border border-dashed rounded-md">
-                <p className="text-muted-foreground">No payments scheduled yet</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {payments.map((payment, index) => (
-                  <div key={payment.id} className="bg-muted/40 p-4 rounded-md">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-medium">Payment #{index + 1}</h4>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => removePayment(payment.id)}
-                        className="text-destructive"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <label className="text-sm font-medium block mb-2">Amount</label>
-                        <Input 
-                          type="number"
-                          placeholder="Payment amount"
-                          value={payment.amount}
-                          onChange={(e) => updatePayment(payment.id, 'amount', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
 
-                      <div>
-                        <label className="text-sm font-medium block mb-2">Currency</label>
-                        <CurrencySelector
-                          value={payment.currency || 'USD'}
-                          onChange={(value) => updatePayment(payment.id, 'currency', value)}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium block mb-2">Status</label>
-                        <Select
-                          value={payment.status || 'pending'}
-                          onValueChange={(value) => updatePayment(payment.id, 'status', value)}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium block mb-2">Description</label>
-                        <Input 
-                          placeholder="Payment description"
-                          value={payment.description || ''}
-                          onChange={(e) => updatePayment(payment.id, 'description', e.target.value)}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium block mb-2">Date</label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full justify-start text-left font-normal",
-                                !payment.date && "text-muted-foreground"
-                              )}
-                            >
-                              {payment.date ? (
-                                format(payment.date, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={payment.date}
-                              onSelect={(date) => date && updatePayment(payment.id, 'date', date)}
-                              disabled={(date) =>
-                                date < new Date("1900-01-01")
-                              }
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+          <TabsContent value="payments" className="space-y-6 pt-4">
+            <div className="flex flex-col space-y-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between">
+                <h3 className="text-lg font-medium mb-2 sm:mb-0">
+                  Payment Schedule
+                </h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addPayment}
+                  className="flex items-center gap-1 mt-2 sm:mt-0"
+                >
+                  <Plus className="h-4 w-4" /> Add Payment
+                </Button>
               </div>
-            )}
+              {payments.length === 0 ? (
+                <div className="text-center py-6 border border-dashed rounded-md">
+                  <p className="text-muted-foreground">
+                    No payments scheduled yet
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {payments.map((payment, index) => (
+                    <div
+                      key={payment.id}
+                      className="bg-muted/40 p-4 rounded-md"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium">
+                          Payment #{index + 1}
+                        </h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removePayment(payment.id)}
+                          className="text-destructive"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <label className="text-sm font-medium block mb-2">
+                            Amount
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="Payment amount"
+                            value={payment.amount}
+                            onChange={(e) =>
+                              updatePayment(
+                                payment.id,
+                                "amount",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium block mb-2">
+                            Currency
+                          </label>
+                          <CurrencySelector
+                            value={payment.currency || "USD"}
+                            onChange={(value) =>
+                              updatePayment(payment.id, "currency", value)
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium block mb-2">
+                            Status
+                          </label>
+                          <Select
+                            value={payment.status || "pending"}
+                            onValueChange={(value) =>
+                              updatePayment(payment.id, "status", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">
+                                Pending
+                              </SelectItem>
+                              <SelectItem value="completed">
+                                Completed
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium block mb-2">
+                            Description
+                          </label>
+                          <Input
+                            placeholder="Payment description"
+                            value={payment.description || ""}
+                            onChange={(e) =>
+                              updatePayment(
+                                payment.id,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium block mb-2">
+                            Date
+                          </label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !payment.date && "text-muted-foreground"
+                                )}
+                              >
+                                {payment.date ? (
+                                  format(payment.date, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={payment.date}
+                                onSelect={(date) =>
+                                  date && updatePayment(payment.id, "date", date)
+                                }
+                                disabled={(date) =>
+                                  date < new Date("1900-01-01")
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
-
-        <div className="flex justify-end space-x-4 pt-8 border-t">
-          <Button 
-            type="button" 
-            variant="outline" 
+        <div className="flex flex-col sm:flex-row justify-end items-center space-y-2 sm:space-y-0 sm:space-x-4 pt-8 border-t">
+          <Button
+            type="button"
+            variant="outline"
             onClick={handleCancel}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
-          <Button type="submit">
+          <Button type="submit" className="w-full sm:w-auto">
             {initialData ? "Update Project" : "Create Project"}
           </Button>
         </div>
