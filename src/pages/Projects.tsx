@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -164,7 +165,7 @@ const Projects = () => {
   };
 
   const handleAddProject = () => {
-    window.location.href = "/projects/new";
+    setIsFormOpen(true);
   };
 
   const handleCloseForm = () => {
@@ -240,7 +241,7 @@ const Projects = () => {
     <Dashboard>
       <PageTransition>
         <div className="space-y-8">
-          <ProjectHeader onAddProject={handleAddProject} />
+          <ProjectHeader onAddProject={() => setIsFormOpen(true)} />
           
           <ProjectFilters
             isFilterOpen={isFilterOpen}
@@ -264,9 +265,21 @@ const Projects = () => {
           <ProjectList
             projects={filteredProjects}
             hasFilters={hasFilters}
-            onAddProject={handleAddProject}
+            onAddProject={() => setIsFormOpen(true)}
           />
         </div>
+
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="py-4">
+              <h2 className="text-xl font-semibold mb-6">Add New Project</h2>
+              <ProjectForm 
+                onSubmit={handleSaveProject} 
+                onCancel={handleCloseForm} 
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       </PageTransition>
     </Dashboard>
   );
