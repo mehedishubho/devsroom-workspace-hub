@@ -40,6 +40,8 @@ import CurrencySelector from "@/components/ui-custom/CurrencySelector";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mapDbClientToClient } from "@/utils/dataMappers";
+import Stepper from "@/components/ui-custom/Stepper";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ProjectStatus = "active" | "completed" | "on-hold" | "cancelled" | "under-revision" | "planning" | "in-progress" | "review";
 
@@ -70,6 +72,12 @@ export interface ProjectFormProps {
   onCancel?: () => void;
 }
 
+const steps = [
+  { label: "Details" },
+  { label: "Access" },
+  { label: "Payments" },
+];
+
 const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -83,6 +91,8 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   const [payments, setPayments] = useState<Payment[]>(initialData?.payments || []);
   const [otherAccess, setOtherAccess] = useState<OtherAccess[]>(initialData?.otherAccess || []);
   const [activeTab, setActiveTab] = useState("details");
+  const [step, setStep] = useState(0);
+  const isMobile = useIsMobile();
 
   const { data: clientsData, isLoading: clientsLoading } = useQuery({
     queryKey: ['clients'],
@@ -315,127 +325,264 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     }));
   };
 
-  return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleSubmitForm)}
-        className="space-y-8 w-full max-w-4xl mx-auto px-2 sm:px-4"
-      >
-        <Tabs
-          defaultValue="details"
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="w-full"
-        >
-          <TabsList className="grid grid-cols-3 w-full gap-2 sm:gap-0">
-            <TabsTrigger value="details" className="py-3 text-xs sm:text-base">
-              Project Details
-            </TabsTrigger>
-            <TabsTrigger value="access" className="py-3 text-xs sm:text-base">
-              Access & Credentials
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="py-3 text-xs sm:text-base">
-              Payments
-            </TabsTrigger>
-          </TabsList>
+  const isStepComplete = (currentStep: number) => {
+    if (currentStep === 0) {
+      return form.getValues("name") && form.getValues("clientId");
+    }
+    if (currentStep === 1) {
+      return true;
+    }
+    if (currentStep === 2) {
+      return true;
+    }
+    return false;
+  };
 
-          <TabsContent value="details" className="space-y-6 pt-4">
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter project name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+  const canContinue = () => {
+    if (step === 0) {
+      const name = form.watch("name");
+      const clientId = form.watch("clientId");
+      return name && clientId && !form.formState.errors.name && !form.formState.errors.clientId;
+    }
+    return true;
+  };
 
-                <FormField
-                  control={form.control}
-                  name="clientId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client</FormLabel>
-                      <Select
-                        onValueChange={handleClientChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a client" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {clientsLoading ? (
-                            <SelectItem value="loading" disabled>
-                              Loading clients...
-                            </SelectItem>
-                          ) : clients.length > 0 ? (
-                            clients.map((client) => (
-                              <SelectItem key={client.id} value={client.id}>
-                                {client.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="no-clients" disabled>
-                              No clients found
-                            </SelectItem>
-                          )}
-                          <SelectItem value="new">+ Add new client</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {showNewClientInput && (
-                        <Input
-                          placeholder="Enter new client name"
-                          value={newClient}
-                          onChange={handleNewClientChange}
-                          className="mt-2"
-                        />
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+  const goNext = () => {
+    if (step < steps.length - 1 && canContinue()) setStep(step + 1);
+  };
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ProjectTypeSelector
-                  selectedTypeId={selectedTypeId}
-                  selectedCategoryId={selectedCategoryId}
-                  onTypeChange={setSelectedTypeId}
-                  onCategoryChange={setSelectedCategoryId}
-                />
-                <FormField
-                  control={form.control}
-                  name="url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+  const goBack = () => {
+    if (step > 0) setStep(step - 1);
+  };
+
+  const renderStep = () => {
+    switch (step) {
+      case 0:
+        return (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter project name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
-                name="description"
+                name="clientId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Client</FormLabel>
+                    <Select
+                      onValueChange={handleClientChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a client" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {clientsLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading clients...
+                          </SelectItem>
+                        ) : clients.length > 0 ? (
+                          clients.map((client) => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-clients" disabled>
+                            No clients found
+                          </SelectItem>
+                        )}
+                        <SelectItem value="new">+ Add new client</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {showNewClientInput && (
+                      <Input
+                        placeholder="Enter new client name"
+                        value={newClient}
+                        onChange={handleNewClientChange}
+                        className="mt-2"
+                      />
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ProjectTypeSelector
+                selectedTypeId={selectedTypeId}
+                selectedCategoryId={selectedCategoryId}
+                onTypeChange={setSelectedTypeId}
+                onCategoryChange={setSelectedCategoryId}
+              />
+              <FormField
+                control={form.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project URL</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Enter project description"
-                        className="min-h-32"
+                      <Input placeholder="https://example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter project description"
+                      className="min-h-32"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Start Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "pl-3 text-left font-normal w-full",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < new Date("1900-01-01")}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="deadlineDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Deadline (Optional)</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "pl-3 text-left font-normal w-full",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < new Date("1900-01-01")}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="projectStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="planning">Planning</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="review">Review</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="on-hold">On Hold</SelectItem>
+                        <SelectItem value="under-revision">Under Revision</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="budget"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Budget (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Enter budget amount"
+                        min={0}
                         {...field}
                       />
                     </FormControl>
@@ -443,357 +590,230 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                   </FormItem>
                 )}
               />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Start Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "pl-3 text-left font-normal w-full",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date("1900-01-01")}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="deadlineDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Deadline (Optional)</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "pl-3 text-left font-normal w-full",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date("1900-01-01")}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="projectStatus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="planning">Planning</SelectItem>
-                          <SelectItem value="in-progress">In Progress</SelectItem>
-                          <SelectItem value="review">Review</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="on-hold">On Hold</SelectItem>
-                          <SelectItem value="under-revision">Under Revision</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="budget"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Budget (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Enter budget amount"
-                          min={0}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="access" className="space-y-6 pt-4">
-            <div className="space-y-6">
-              <div className="bg-muted/40 p-4 rounded-md space-y-4">
-                <h3 className="text-lg font-medium">Project Credentials</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Username" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Password" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
+          </div>
+        );
+      case 1:
+        return (
+          <div className="space-y-6">
+            <div className="bg-muted/40 p-4 rounded-md space-y-4">
+              <h3 className="text-lg font-medium">Project Credentials</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="credentialNotes"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Notes</FormLabel>
+                      <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Additional notes" {...field} />
+                        <Input placeholder="Username" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Password" {...field} />
                       </FormControl>
                     </FormItem>
                   )}
                 />
               </div>
-              <div className="bg-muted/40 p-4 rounded-md space-y-4">
-                <h3 className="text-lg font-medium">Hosting Information</h3>
+              <FormField
+                control={form.control}
+                name="credentialNotes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Additional notes" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="bg-muted/40 p-4 rounded-md space-y-4">
+              <h3 className="text-lg font-medium">Hosting Information</h3>
+              <FormField
+                control={form.control}
+                name="hostingProvider"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hosting Provider</FormLabel>
+                    <FormControl>
+                      <Input placeholder="AWS, DigitalOcean, etc." {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="hostingUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hosting URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com/admin" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="hostingProvider"
+                  name="hostingUsername"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hosting Provider</FormLabel>
+                      <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="AWS, DigitalOcean, etc." {...field} />
+                        <Input placeholder="Hosting username" {...field} />
                       </FormControl>
                     </FormItem>
                   )}
                 />
                 <FormField
                   control={form.control}
-                  name="hostingUrl"
+                  name="hostingPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hosting URL</FormLabel>
+                      <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://example.com/admin" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="hostingUsername"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Hosting username" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="hostingPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Hosting password" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="hostingNotes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Additional notes" {...field} />
+                        <Input placeholder="Hosting password" {...field} />
                       </FormControl>
                     </FormItem>
                   )}
                 />
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">Additional Access</h3>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={addOtherAccess}
-                    size="sm"
-                    className="flex items-center gap-1"
-                  >
-                    <Plus className="h-4 w-4" /> Add Access
-                  </Button>
+              <FormField
+                control={form.control}
+                name="hostingNotes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Additional notes" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Additional Access</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addOtherAccess}
+                  size="sm"
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" /> Add Access
+                </Button>
+              </div>
+              {otherAccess.length === 0 ? (
+                <div className="text-center py-6 border border-dashed rounded-md">
+                  <p className="text-muted-foreground">
+                    No additional access added
+                  </p>
                 </div>
-                {otherAccess.length === 0 ? (
-                  <div className="text-center py-6 border border-dashed rounded-md">
-                    <p className="text-muted-foreground">
-                      No additional access added
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {otherAccess.map((access, index) => (
-                      <div
-                        key={access.id}
-                        className="bg-muted/40 p-4 rounded-md space-y-4"
-                      >
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium">Access #{index + 1}</h4>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeOtherAccess(access.id)}
-                            className="text-destructive"
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-sm font-medium">Name</label>
-                            <Input
-                              placeholder="Name (e.g. Email Account)"
-                              value={access.name}
-                              onChange={(e) =>
-                                updateOtherAccess(access.id, "name", e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium">Type</label>
-                            <Select
-                              value={access.type}
-                              onValueChange={(value) =>
-                                updateOtherAccess(access.id, "type", value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="email">Email</SelectItem>
-                                <SelectItem value="ftp">FTP</SelectItem>
-                                <SelectItem value="ssh">SSH</SelectItem>
-                                <SelectItem value="cms">CMS</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-sm font-medium">Username</label>
-                            <Input
-                              placeholder="Username"
-                              value={access.credentials.username}
-                              onChange={(e) =>
-                                updateOtherAccess(access.id, "username", e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium">Password</label>
-                            <Input
-                              placeholder="Password"
-                              value={access.credentials.password}
-                              onChange={(e) =>
-                                updateOtherAccess(access.id, "password", e.target.value)
-                              }
-                            />
-                          </div>
+              ) : (
+                <div className="space-y-4">
+                  {otherAccess.map((access, index) => (
+                    <div
+                      key={access.id}
+                      className="bg-muted/40 p-4 rounded-md space-y-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Access #{index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeOtherAccess(access.id)}
+                          className="text-destructive"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium">Name</label>
+                          <Input
+                            placeholder="Name (e.g. Email Account)"
+                            value={access.name}
+                            onChange={(e) =>
+                              updateOtherAccess(access.id, "name", e.target.value)
+                            }
+                          />
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Notes</label>
-                          <Textarea
-                            placeholder="Additional notes"
-                            value={access.notes || ""}
+                          <label className="text-sm font-medium">Type</label>
+                          <Select
+                            value={access.type}
+                            onValueChange={(value) =>
+                              updateOtherAccess(access.id, "type", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="email">Email</SelectItem>
+                              <SelectItem value="ftp">FTP</SelectItem>
+                              <SelectItem value="ssh">SSH</SelectItem>
+                              <SelectItem value="cms">CMS</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium">Username</label>
+                          <Input
+                            placeholder="Username"
+                            value={access.credentials.username}
                             onChange={(e) =>
-                              updateOtherAccess(access.id, "notes", e.target.value)
+                              updateOtherAccess(access.id, "username", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Password</label>
+                          <Input
+                            placeholder="Password"
+                            value={access.credentials.password}
+                            onChange={(e) =>
+                              updateOtherAccess(access.id, "password", e.target.value)
                             }
                           />
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <div>
+                        <label className="text-sm font-medium">Notes</label>
+                        <Textarea
+                          placeholder="Additional notes"
+                          value={access.notes || ""}
+                          onChange={(e) =>
+                            updateOtherAccess(access.id, "notes", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </TabsContent>
-
-          <TabsContent value="payments" className="space-y-6 pt-4">
+          </div>
+        );
+      case 2:
+        return (
+          <div className="space-y-6">
             <div className="flex flex-col space-y-4">
               <div className="flex flex-col sm:flex-row items-center justify-between">
                 <h3 className="text-lg font-medium mb-2 sm:mb-0">
@@ -947,19 +967,63 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
                 </div>
               )}
             </div>
-          </TabsContent>
-        </Tabs>
-        <div className="flex flex-col sm:flex-row justify-end items-center space-y-2 sm:space-y-0 sm:space-x-4 pt-8 border-t">
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(handleSubmitForm)}
+        className="space-y-8 w-full max-w-4xl mx-auto px-2 sm:px-4"
+      >
+        <Stepper
+          steps={steps}
+          activeStep={step}
+          onStepClick={(idx) => idx <= step && setStep(idx)}
+          completedStep={step}
+        />
+
+        <div>{renderStep()}</div>
+
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
+            {step > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={goBack}
+                className="w-full sm:w-auto"
+              >
+                Back
+              </Button>
+            )}
+            {step < steps.length - 1 && (
+              <Button
+                type="button"
+                onClick={goNext}
+                disabled={!canContinue()}
+                className="w-full sm:w-auto"
+              >
+                Next
+              </Button>
+            )}
+            {step === steps.length - 1 && (
+              <Button type="submit" className="w-full sm:w-auto">
+                {initialData ? "Update Project" : "Create Project"}
+              </Button>
+            )}
+          </div>
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={handleCancel}
-            className="w-full sm:w-auto"
+            className="text-destructive w-full sm:w-auto"
           >
             Cancel
-          </Button>
-          <Button type="submit" className="w-full sm:w-auto">
-            {initialData ? "Update Project" : "Create Project"}
           </Button>
         </div>
       </form>
