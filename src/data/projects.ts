@@ -69,6 +69,8 @@ export const sampleProjects: Project[] = [
     ],
     projectTypeId: "type-1",
     projectCategoryId: "cat-1",
+    projectType: "E-commerce",
+    projectCategory: "Website Redesign",
     status: "active",
     notes: "Client requested additional animations on product pages.",
     createdAt: new Date("2023-03-10"),
@@ -125,6 +127,8 @@ export const sampleProjects: Project[] = [
     ],
     projectTypeId: "type-2",
     projectCategoryId: "cat-4",
+    projectType: "Corporate",
+    projectCategory: "Website Development",
     status: "completed",
     createdAt: new Date("2023-01-05"),
     updatedAt: new Date("2023-03-25")
@@ -181,6 +185,8 @@ export const sampleProjects: Project[] = [
     ],
     projectTypeId: "type-3",
     projectCategoryId: "cat-6",
+    projectType: "Mobile",
+    projectCategory: "App Development",
     status: "active",
     createdAt: new Date("2023-04-25"),
     updatedAt: new Date("2023-06-28")
@@ -215,6 +221,8 @@ export const addProject = (projectData: Partial<Project>): Project => {
     status: projectData.status || "active",
     projectTypeId: projectData.projectTypeId,
     projectCategoryId: projectData.projectCategoryId,
+    projectType: projectData.projectType || "",
+    projectCategory: projectData.projectCategory || "",
     notes: projectData.notes,
     createdAt: new Date(),
     updatedAt: new Date()

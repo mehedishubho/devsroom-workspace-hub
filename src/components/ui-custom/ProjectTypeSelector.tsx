@@ -54,8 +54,14 @@ const ProjectTypeSelector = ({
   useEffect(() => {
     import("@/data/projectTypes").then(({ sampleProjectTypes }) => {
       setProjectTypes([...sampleProjectTypes]);
+      
+      // If we have a selectedTypeId but no categories loaded, load them now
+      if (selectedTypeId) {
+        const typeCategories = getCategoriesByTypeId(selectedTypeId);
+        setCategories(typeCategories);
+      }
     });
-  }, []);
+  }, [selectedTypeId]);
 
   // Load categories when type changes
   useEffect(() => {
@@ -145,6 +151,16 @@ const ProjectTypeSelector = ({
       description: "New category added"
     });
   };
+
+  // Log selections for debugging
+  useEffect(() => {
+    console.log("Current selections:", { 
+      selectedTypeId, 
+      selectedCategoryId,
+      typeFound: projectTypes.some(t => t.id === selectedTypeId),
+      categoryFound: categories.some(c => c.id === selectedCategoryId)
+    });
+  }, [selectedTypeId, selectedCategoryId, projectTypes, categories]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

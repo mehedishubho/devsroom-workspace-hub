@@ -1,3 +1,4 @@
+
 import { Project, Payment } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -127,6 +128,7 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
 
     // Handle payments with currency support
     if (updates.payments) {
+      // Only delete existing payments if we're providing new ones
       await supabase
         .from('payments')
         .delete()
