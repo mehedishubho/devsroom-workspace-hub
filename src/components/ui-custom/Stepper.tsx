@@ -1,6 +1,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 
 interface StepperProps {
   steps: { label: string }[];
@@ -9,62 +10,60 @@ interface StepperProps {
   completedStep?: number;
 }
 
-const stepColors = [
-  "bg-primary", // Done
-  "bg-primary/40", // Active
-  "bg-muted",      // Inactive
-];
-
-export const Stepper: React.FC<StepperProps> = ({
+const Stepper: React.FC<StepperProps> = ({
   steps,
   activeStep,
   onStepClick,
   completedStep,
 }) => {
   return (
-    <nav className="w-full flex justify-center mb-8">
-      <ol className="flex flex-row gap-0 w-full max-w-2xl justify-between">
+    <nav className="w-full flex justify-center mb-10">
+      <ol className="flex w-full max-w-2xl justify-between items-center relative px-2 sm:px-0">
         {steps.map((step, idx) => {
           const isCompleted = completedStep !== undefined && idx < completedStep;
           const isActive = idx === activeStep;
-          const colorClass = isCompleted
-            ? "bg-vivid-purple text-white"
-            : isActive
-            ? "bg-primary-purple text-white"
-            : "bg-soft-gray text-neutral-gray";
+          const isLast = idx === steps.length - 1;
 
           return (
-            <li key={step.label} className="flex-1 flex flex-col items-center relative">
+            <li key={step.label} className="flex-1 flex flex-col items-center relative min-w-[0]">
               <button
+                type="button"
                 onClick={() => onStepClick && onStepClick(idx)}
                 className={cn(
-                  "w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center font-semibold z-10 transition-colors duration-200 border-2 border-white shadow",
-                  colorClass,
+                  "transition-colors duration-200 flex items-center justify-center font-bold rounded-full border-2 h-10 w-10 sm:h-12 sm:w-12 shadow",
+                  isCompleted
+                    ? "bg-violet-600 text-white border-violet-600"
+                    : isActive
+                    ? "bg-white text-violet-700 border-violet-600"
+                    : "bg-gray-200 text-gray-500 border-gray-200",
                   onStepClick ? "cursor-pointer" : "cursor-default"
                 )}
                 aria-current={isActive ? "step" : undefined}
                 tabIndex={0}
               >
-                {idx + 1}
+                {isCompleted ? <span className="block w-5 h-5 rounded-full bg-violet-600 mx-auto"></span> : idx + 1}
               </button>
               <span className={cn(
-                "text-xs md:text-sm mt-2 text-center font-medium",
-                isActive ? "text-primary-purple" : isCompleted ? "text-vivid-purple" : "text-medium-gray"
+                "text-xs sm:text-sm mt-2 text-center font-semibold whitespace-nowrap",
+                isActive ? "text-violet-700" : isCompleted ? "text-violet-600" : "text-gray-400"
               )}>
                 {step.label}
               </span>
-              {idx < steps.length - 1 && (
+              {!isLast && (
                 <span
                   className={cn(
-                    "absolute top-1/2 left-full h-1 w-full md:w-24 -translate-y-1/2",
+                    "absolute top-[22%] left-full h-1 w-full sm:w-24 -translate-y-1/2",
                     isCompleted
-                      ? "bg-vivid-purple"
+                      ? "bg-violet-600"
                       : isActive
-                      ? "bg-primary-purple/50"
-                      : "bg-soft-gray"
+                      ? "bg-violet-300"
+                      : "bg-gray-200"
                   )}
                   style={{
                     zIndex: 1,
+                    // Responsive horizontal line
+                    maxWidth: "90px",
+                    minWidth: "32px",
                   }}
                 />
               )}
@@ -77,4 +76,3 @@ export const Stepper: React.FC<StepperProps> = ({
 };
 
 export default Stepper;
-
