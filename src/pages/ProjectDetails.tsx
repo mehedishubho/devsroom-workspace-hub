@@ -12,7 +12,7 @@ import { Project, ensureValidStatus } from "@/types";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import PaymentItem from "@/components/ui-custom/PaymentItem";
+import PaymentItemWithCurrency from "@/components/ui-custom/PaymentItemWithCurrency";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { updateProject } from "@/services/projects";
@@ -449,7 +449,7 @@ const ProjectDetails = () => {
                   ) : (
                     <div className="space-y-4">
                       {project.payments.map((payment, index) => (
-                        <PaymentItem 
+                        <PaymentItemWithCurrency 
                           key={payment.id || index} 
                           payment={payment}
                           index={index}
