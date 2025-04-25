@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -63,7 +62,6 @@ const ProjectDetails = () => {
       }
 
       try {
-        // First, fetch the project data
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
           .select(`
@@ -77,7 +75,6 @@ const ProjectDetails = () => {
           throw new Error("Project not found");
         }
 
-        // Then fetch project type and category names
         let projectTypeName = '';
         let projectCategoryName = '';
 
@@ -452,7 +449,9 @@ const ProjectDetails = () => {
                         <PaymentItemWithCurrency 
                           key={payment.id || index} 
                           payment={payment}
-                          index={index}
+                          onUpdate={() => {}} 
+                          onDelete={() => {}}
+                          editable={false}
                         />
                       ))}
                     </div>
