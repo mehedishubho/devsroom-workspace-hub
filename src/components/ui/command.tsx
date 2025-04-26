@@ -14,7 +14,9 @@ const Command = React.forwardRef<
 >(({ className, ...props }, ref) => {
   // Create a safer version of children that is guaranteed to be an array with no falsy values
   const safeChildren = React.useMemo(() => {
-    return React.Children.toArray(props.children || []).filter(Boolean);
+    // Extra defensive check to ensure we're working with valid children
+    if (!props.children) return [];
+    return React.Children.toArray(props.children).filter(Boolean);
   }, [props.children]);
   
   return (
@@ -35,7 +37,10 @@ interface CommandDialogProps extends DialogProps {}
 
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   // Make sure children is not undefined
-  const safeChildren = React.Children.toArray(children || []).filter(Boolean);
+  const safeChildren = React.useMemo(() => {
+    if (!children) return [];
+    return React.Children.toArray(children).filter(Boolean);
+  }, [children]);
   
   return (
     <Dialog {...props}>
@@ -99,7 +104,8 @@ const CommandGroup = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   // Create a safer version of children that is guaranteed to be an array with no falsy values
   const safeChildren = React.useMemo(() => {
-    return React.Children.toArray(children || []).filter(Boolean);
+    if (!children) return [];
+    return React.Children.toArray(children).filter(Boolean);
   }, [children]);
   
   return (

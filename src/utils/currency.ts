@@ -1,5 +1,7 @@
+
 import { Currency } from "@/types";
 
+// Ensure we always have at least the USD currency
 export const currencies: Currency[] = [
   { code: "USD", name: "US Dollar", symbol: "$" },
   { code: "BDT", name: "Bangladeshi Taka", symbol: "৳" },
@@ -14,6 +16,15 @@ export const exchangeRates: Record<string, number> = {
   GBP: 1.29,
   EUR: 1.09,
   CAD: 0.74,
+};
+
+// Helper function to get a safe currency list
+const getSafeCurrencyList = (): Currency[] => {
+  if (!currencies || !Array.isArray(currencies) || currencies.length === 0) {
+    console.warn("Using fallback currency list in getSafeCurrencyList");
+    return [{ code: "USD", name: "US Dollar", symbol: "$" }];
+  }
+  return currencies;
 };
 
 export const convertCurrency = (
@@ -43,15 +54,19 @@ export const formatCurrency = (
   currencyCode: string = "USD"
 ): string => {
   if (amount == null) amount = 0;
-  const currency = currencies.find(c => c.code === currencyCode);
+  const safeCurrencies = getSafeCurrencyList();
+  const currency = safeCurrencies.find(c => c.code === currencyCode);
+  
   if (!currency) {
     return `$${amount.toFixed(2)}`;
   }
+  
   return `${currency.symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 export const getCurrencySymbol = (currencyCode: string): string => {
   if (!currencyCode) return "$";
-  const currency = currencies.find(c => c.code === currencyCode);
+  const safeCurrencies = getSafeCurrencyList();
+  const currency = safeCurrencies.find(c => c.code === currencyCode);
   return currency?.symbol || "$";
 };

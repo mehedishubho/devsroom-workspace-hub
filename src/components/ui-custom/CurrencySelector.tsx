@@ -27,8 +27,9 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   const [open, setOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(value || "USD");
   
-  // Create a safe currencies array with a fallback
+  // Create a safe currencies array with a fallback - ensuring it's always an array
   const safeCurrencies = useMemo(() => {
+    // Extra safety check to ensure currencies always exists as an array
     if (!currencies || !Array.isArray(currencies) || currencies.length === 0) {
       console.warn("Using fallback currency list");
       return [{ code: "USD", name: "US Dollar", symbol: "$" }];
@@ -57,6 +58,10 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
 
   // Find selected currency with fallbacks
   const selectedOption = useMemo(() => {
+    if (!safeCurrencies || !Array.isArray(safeCurrencies)) {
+      return { code: "USD", name: "US Dollar", symbol: "$" };
+    }
+    
     const found = safeCurrencies.find(currency => currency.code === selectedCurrency);
     if (found) return found;
     
@@ -66,6 +71,15 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
     // Ultimate fallback if currencies is undefined or empty
     return { code: "USD", name: "US Dollar", symbol: "$" };
   }, [selectedCurrency, safeCurrencies]);
+
+  // Extra safety check for rendering
+  if (!safeCurrencies || !Array.isArray(safeCurrencies)) {
+    return (
+      <Button variant="outline" className={cn("w-full", className)}>
+        $ USD - US Dollar
+      </Button>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
