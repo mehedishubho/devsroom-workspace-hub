@@ -72,14 +72,14 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
     return { code: "USD", name: "US Dollar", symbol: "$" };
   }, [selectedCurrency, safeCurrencies]);
 
-  // Extra safety check for rendering
-  if (!safeCurrencies || !Array.isArray(safeCurrencies)) {
-    return (
-      <Button variant="outline" className={cn("w-full", className)}>
-        $ USD - US Dollar
-      </Button>
-    );
-  }
+  // // Extra safety check for rendering
+  // if (!safeCurrencies || !Array.isArray(safeCurrencies)) {
+  //   return (
+  //     <Button variant="outline" className={cn("w-full", className)}>
+  //       $ USD - US Dollar
+  //     </Button>
+  //   );
+  // }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
