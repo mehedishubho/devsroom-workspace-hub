@@ -32,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { simplifiedToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { addProject, updateProject } from "@/services/projectService";
-import { Client, Project, Payment, OtherAccess } from "@/types";
+import { Project, Payment, OtherAccess } from "@/types";
 import ProjectTypeSelector from "@/components/ui-custom/ProjectTypeSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { v4 as uuidv4 } from 'uuid';
@@ -78,6 +78,8 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [newClient, setNewClient] = useState("");
   const [showNewClientInput, setShowNewClientInput] = useState(false);
+  
+  // Enhanced logging for type and category selection
   const [selectedTypeId, setSelectedTypeId] = useState(initialData?.projectTypeId || "");
   const [selectedCategoryId, setSelectedCategoryId] = useState(initialData?.projectCategoryId || "");
   const [payments, setPayments] = useState<Payment[]>(initialData?.payments || []);
@@ -152,13 +154,13 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
   };
 
   useEffect(() => {
-    console.log("ProjectForm - Initial project type and category:", {
+    console.log("ProjectForm - Type/Category Selection:", {
       initialTypeId: initialData?.projectTypeId,
       initialCategoryId: initialData?.projectCategoryId,
-      selectedTypeId,
-      selectedCategoryId
+      currentTypeId: selectedTypeId,
+      currentCategoryId: selectedCategoryId
     });
-  }, [initialData]);
+  }, [selectedTypeId, selectedCategoryId, initialData]);
 
   const handleSubmitForm = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -183,18 +185,12 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         }
       }
 
-      console.log("ProjectForm - Submitting with type/category:", {
-        selectedTypeId,
-        selectedCategoryId,
-        selectedTypeName: clients.find(t => t.id === selectedTypeId)?.name || "",
-        selectedCategoryName: clients.find(c => c.id === selectedCategoryId)?.name || ""
+      console.log("ProjectForm - Submitting Project with:", {
+        typeId: selectedTypeId,
+        categoryId: selectedCategoryId,
+        typeInput: values.projectType,
+        categoryInput: values.projectCategory
       });
-
-      const projectStatus = mapFormStatusToProjectStatus(values.projectStatus);
-      const originalStatus = values.projectStatus;
-
-      const projectTypeName = clients.find(t => t.id === selectedTypeId)?.name || "";
-      const projectCategoryName = clients.find(c => c.id === selectedCategoryId)?.name || "";
 
       const projectData = {
         ...(initialData || {}),
@@ -205,14 +201,20 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         url: values.url || "",
         startDate: values.startDate,
         endDate: values.deadlineDate,
-        status: projectStatus,
-        originalStatus: originalStatus,
+        status: mapFormStatusToProjectStatus(values.projectStatus),
+        originalStatus: values.projectStatus,
         price: values.budget ? parseFloat(values.budget) : 0,
+        
+        // Explicitly set project type and category information
         projectTypeId: selectedTypeId || null,
         projectCategoryId: selectedCategoryId || null,
-        projectType: projectTypeName,
-        projectCategory: projectCategoryName,
-        updatedAt: new Date(),
+        projectType: selectedTypeId 
+          ? (clients.find(t => t.id === selectedTypeId)?.name || "")
+          : "",
+        projectCategory: selectedCategoryId 
+          ? (clients.find(c => c.id === selectedCategoryId)?.name || "")
+          : "",
+        
         credentials: {
           username: values.username || "",
           password: values.password || "",
@@ -230,6 +232,8 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         payments: payments,
         otherAccess: otherAccess
       };
+
+      console.log("Final Project Data:", projectData);
 
       if (initialData) {
         const updatedProject = await updateProject(initialData.id, projectData);
@@ -407,8 +411,14 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
             <ProjectTypeSelector
               selectedTypeId={selectedTypeId}
               selectedCategoryId={selectedCategoryId}
-              onTypeChange={setSelectedTypeId}
-              onCategoryChange={setSelectedCategoryId}
+              onTypeChange={(typeId) => {
+                console.log("Type changed to:", typeId);
+                setSelectedTypeId(typeId);
+              }}
+              onCategoryChange={(categoryId) => {
+                console.log("Category changed to:", categoryId);
+                setSelectedCategoryId(categoryId);
+              }}
             />
 
             <FormField
