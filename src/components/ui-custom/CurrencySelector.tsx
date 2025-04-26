@@ -105,28 +105,29 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
           <CommandInput placeholder="Search currency..." />
           <CommandEmpty>No currency found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-y-auto">
-            {safeCurrencies.map((currency) => (
-              <CommandItem
-                key={currency.code}
-                value={currency.code}
-                onSelect={handleSelect}
-                className="cursor-pointer"
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selectedCurrency === currency.code
-                      ? "opacity-100"
-                      : "opacity-0"
-                  )}
-                />
-                <span className="mr-2">{currency.symbol}</span>
-                <span>
-                  {currency.code} - {currency.name}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
+  {safeCurrencies.map((currency) => (
+    <CommandItem
+      key={currency.code}
+      value={currency.code}
+      onSelect={() => handleSelect(currency.code)}
+      className="cursor-pointer"
+    >
+      <Check
+        className={cn(
+          "mr-2 h-4 w-4",
+          selectedCurrency === currency.code
+            ? "opacity-100"
+            : "opacity-0"
+        )}
+      />
+      <span className="mr-2">{currency.symbol}</span>
+      <span>
+        {currency.code} - {currency.name}
+      </span>
+    </CommandItem>
+  ))}
+</CommandGroup>
+
         </Command>
       </PopoverContent>
     </Popover>
