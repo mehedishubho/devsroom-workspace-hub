@@ -23,6 +23,7 @@ const PaymentItemWithCurrency: React.FC<PaymentItemProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [amount, setAmount] = useState(String(payment.amount));
   const [description, setDescription] = useState(payment.description || "");
+  // Ensure payment.currency is always defined with a default value
   const [currency, setCurrency] = useState(payment.currency || "USD");
 
   const handleSave = () => {
@@ -53,7 +54,7 @@ const PaymentItemWithCurrency: React.FC<PaymentItemProps> = ({
     return (
       <div className="flex items-center justify-between p-3 bg-background rounded-md border">
         <div>
-          <div className="font-medium">{formatCurrency(payment.amount, payment.currency)}</div>
+          <div className="font-medium">{formatCurrency(payment.amount, payment.currency || "USD")}</div>
           <div className="text-sm text-muted-foreground">
             {payment.description || "No description"}
           </div>
@@ -108,7 +109,7 @@ const PaymentItemWithCurrency: React.FC<PaymentItemProps> = ({
       ) : (
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-medium">{formatCurrency(payment.amount, payment.currency)}</div>
+            <div className="font-medium">{formatCurrency(payment.amount, payment.currency || "USD")}</div>
             <div className="text-sm text-muted-foreground">
               {payment.description || "No description"}
             </div>

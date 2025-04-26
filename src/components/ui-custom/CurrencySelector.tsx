@@ -27,7 +27,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
   const [open, setOpen] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(value || "USD");
   
-  // Create a safe currencies array that is guaranteed to be an array with at least one item
+  // Create a safe currencies array with a fallback
   const safeCurrencies = useMemo(() => {
     if (!currencies || !Array.isArray(currencies) || currencies.length === 0) {
       console.warn("Using fallback currency list");
@@ -57,26 +57,15 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
 
   // Find selected currency with fallbacks
   const selectedOption = useMemo(() => {
-    if (!safeCurrencies || !Array.isArray(safeCurrencies)) {
-      console.warn("No valid currencies available");
-      return { code: "USD", name: "US Dollar", symbol: "$" };
-    }
-    
     const found = safeCurrencies.find(currency => currency.code === selectedCurrency);
     if (found) return found;
     
     const defaultUSD = safeCurrencies.find(currency => currency.code === "USD");
     if (defaultUSD) return defaultUSD;
     
-    // Ultimate fallback
+    // Ultimate fallback if currencies is undefined or empty
     return { code: "USD", name: "US Dollar", symbol: "$" };
   }, [selectedCurrency, safeCurrencies]);
-
-  // Make sure we have valid data for rendering
-  if (!selectedOption) {
-    console.warn("No selected currency option available");
-    return null;
-  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -102,7 +91,7 @@ const CurrencySelector = ({ value, onChange, className }: CurrencySelectorProps)
           <CommandInput placeholder="Search currency..." />
           <CommandEmpty>No currency found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-y-auto">
-            {safeCurrencies && safeCurrencies.map((currency) => (
+            {safeCurrencies.map((currency) => (
               <CommandItem
                 key={currency.code}
                 value={currency.code}
