@@ -1,4 +1,3 @@
-
 import { Project } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -27,15 +26,38 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       projectCategory: projectData.projectCategory
     });
     
-    // Validate project type and category IDs (ensure they're valid UUIDs)
-    if (projectData.projectTypeId && !isValidUUID(projectData.projectTypeId)) {
-      console.warn("Invalid project type ID format, will be set to null");
-      projectData.projectTypeId = null;
+    // Store original values for sample data handling
+    const originalTypeId = projectData.projectTypeId;
+    const originalCategoryId = projectData.projectCategoryId;
+    const originalTypeName = projectData.projectType;
+    const originalCategoryName = projectData.projectCategory;
+    
+    // Validate project type and category IDs (ensure they're valid UUIDs for database)
+    let dbTypeId = null;
+    let dbCategoryId = null;
+    
+    if (projectData.projectTypeId) {
+      if (projectData.projectTypeId.startsWith('type-')) {
+        // This is sample data, we'll store the name but not the ID in the database
+        dbTypeId = null;
+      } else if (isValidUUID(projectData.projectTypeId)) {
+        dbTypeId = projectData.projectTypeId;
+      } else {
+        console.warn("Invalid project type ID format, will be set to null");
+        dbTypeId = null;
+      }
     }
     
-    if (projectData.projectCategoryId && !isValidUUID(projectData.projectCategoryId)) {
-      console.warn("Invalid project category ID format, will be set to null");
-      projectData.projectCategoryId = null;
+    if (projectData.projectCategoryId) {
+      if (projectData.projectCategoryId.startsWith('cat-')) {
+        // This is sample data, we'll store the name but not the ID in the database
+        dbCategoryId = null;
+      } else if (isValidUUID(projectData.projectCategoryId)) {
+        dbCategoryId = projectData.projectCategoryId;
+      } else {
+        console.warn("Invalid project category ID format, will be set to null");
+        dbCategoryId = null;
+      }
     }
 
     // Determine original status (for "In Progress" display)
@@ -58,8 +80,8 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
         budget: projectData.price || 0,
         status: ensureValidProjectStatus(projectData.status || 'active'),
         original_status: originalStatus,
-        project_type_id: projectData.projectTypeId || null,
-        project_category_id: projectData.projectCategoryId || null
+        project_type_id: dbTypeId,
+        project_category_id: dbCategoryId
       })
       .select()
       .single();
@@ -139,15 +161,16 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       .eq('id', projectData.clientId)
       .single();
 
-    // Fetch project type and category names
-    let projectTypeName = projectData.projectType || '';
-    let projectCategoryName = projectData.projectCategory || '';
+    // Use original project type and category names if available (from sample data)
+    // or fetch from database if available
+    let projectTypeName = originalTypeName || '';
+    let projectCategoryName = originalCategoryName || '';
     
-    if (projectData.projectTypeId) {
+    if (dbTypeId) {
       const { data: typeData } = await supabase
         .from('project_types')
         .select('name')
-        .eq('id', projectData.projectTypeId)
+        .eq('id', dbTypeId)
         .maybeSingle();
       
       if (typeData?.name) {
@@ -155,11 +178,11 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       }
     }
     
-    if (projectData.projectCategoryId) {
+    if (dbCategoryId) {
       const { data: categoryData } = await supabase
         .from('project_categories')
         .select('name')
-        .eq('id', projectData.projectCategoryId)
+        .eq('id', dbCategoryId)
         .maybeSingle();
       
       if (categoryData?.name) {
@@ -168,8 +191,8 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
     }
 
     console.log("Project created with type/category:", {
-      projectTypeId: projectData.projectTypeId,
-      projectCategoryId: projectData.projectCategoryId,
+      projectTypeId: projectRecord.project_type_id || originalTypeId,
+      projectCategoryId: projectRecord.project_category_id || originalCategoryId,
       projectType: projectTypeName,
       projectCategory: projectCategoryName
     });
@@ -189,8 +212,9 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       originalStatus: typeof projectRecord.original_status === 'string' 
         ? projectRecord.original_status 
         : projectRecord.status,
-      projectTypeId: projectRecord.project_type_id || projectData.projectTypeId || "",
-      projectCategoryId: projectRecord.project_category_id || projectData.projectCategoryId || "",
+      // Keep the original IDs for sample data
+      projectTypeId: originalTypeId || projectRecord.project_type_id || "",
+      projectCategoryId: originalCategoryId || projectRecord.project_category_id || "",
       projectType: projectTypeName,
       projectCategory: projectCategoryName,
       credentials: projectData.credentials || { username: '', password: '', notes: '' },

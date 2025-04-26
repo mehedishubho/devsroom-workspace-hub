@@ -76,6 +76,21 @@ export const getProjectCategories = async (): Promise<ProjectCategory[]> => {
  */
 export const getCategoriesByType = async (projectTypeId: string): Promise<ProjectCategory[]> => {
   try {
+    // Add validation for the projectTypeId format
+    if (!projectTypeId || typeof projectTypeId !== 'string') {
+      console.error('Invalid projectTypeId provided:', projectTypeId);
+      return [];
+    }
+    
+    // For sample data IDs that start with "type-", use the local data
+    if (projectTypeId.startsWith('type-')) {
+      const filteredCategories = sampleProjectCategories.filter(
+        cat => cat.projectTypeId === projectTypeId
+      );
+      return [...filteredCategories];
+    }
+    
+    // Otherwise query the database
     const { data, error } = await supabase
       .from('project_categories')
       .select('*')

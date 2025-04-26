@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Select, 
@@ -46,18 +45,15 @@ const ProjectTypeSelector = ({
   const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
   const [categories, setCategories] = useState<ProjectCategory[]>([]);
   
-  // New type/category dialog state
   const [isAddTypeOpen, setIsAddTypeOpen] = useState(false);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newTypeName, setNewTypeName] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
 
-  // Load project types
   useEffect(() => {
     import("@/data/projectTypes").then(({ sampleProjectTypes }) => {
       setProjectTypes([...sampleProjectTypes]);
       
-      // If we have a selectedTypeId but no categories loaded, load them now
       if (selectedTypeId) {
         const typeCategories = getCategoriesByTypeId(selectedTypeId);
         setCategories(typeCategories);
@@ -65,13 +61,11 @@ const ProjectTypeSelector = ({
     });
   }, [selectedTypeId]);
 
-  // Load categories when type changes
   useEffect(() => {
     if (selectedTypeId) {
       const typeCategories = getCategoriesByTypeId(selectedTypeId);
       setCategories(typeCategories);
       
-      // If current category doesn't belong to the new type, reset it
       const categoryBelongsToType = typeCategories.some(cat => cat.id === selectedCategoryId);
       if (!categoryBelongsToType && typeCategories.length > 0) {
         onCategoryChange(typeCategories[0].id);
@@ -154,7 +148,6 @@ const ProjectTypeSelector = ({
     });
   };
 
-  // Log selections for debugging
   useEffect(() => {
     console.log("ProjectTypeSelector - Current selections:", { 
       selectedTypeId, 
@@ -232,7 +225,6 @@ const ProjectTypeSelector = ({
         </Select>
       </div>
 
-      {/* Add Type Dialog */}
       <Dialog open={isAddTypeOpen} onOpenChange={setIsAddTypeOpen}>
         <DialogContent>
           <DialogHeader>
@@ -271,7 +263,6 @@ const ProjectTypeSelector = ({
         </DialogContent>
       </Dialog>
 
-      {/* Add Category Dialog */}
       <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
         <DialogContent>
           <DialogHeader>

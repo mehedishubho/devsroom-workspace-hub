@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +33,6 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const [availableCategories, setAvailableCategories] = useState<any[]>([]);
 
-  // Fetch projects using React Query
   const { 
     data: projects = [], 
     isLoading: isLoadingProjects,
@@ -45,7 +43,6 @@ const Index = () => {
     queryFn: getProjects
   });
 
-  // Fetch project types using React Query
   const {
     data: projectTypes = [],
     isLoading: isLoadingTypes
@@ -54,7 +51,6 @@ const Index = () => {
     queryFn: getProjectTypes
   });
 
-  // Fetch project categories using React Query
   const {
     data: projectCategories = [],
     isLoading: isLoadingCategories
@@ -63,9 +59,7 @@ const Index = () => {
     queryFn: getProjectCategories
   });
 
-  // Filter projects based on search and filters
   const filteredProjects = projects.filter(project => {
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -76,12 +70,10 @@ const Index = () => {
       if (!matchesSearch) return false;
     }
     
-    // Filter by project type
     if (selectedType && project.projectTypeId !== selectedType) {
       return false;
     }
     
-    // Filter by category
     if (selectedCategory && project.projectCategoryId !== selectedCategory) {
       return false;
     }
@@ -89,7 +81,6 @@ const Index = () => {
     return true;
   });
 
-  // Update available categories when selected type changes
   useEffect(() => {
     if (selectedType) {
       const categories = projectCategories.filter(
@@ -97,7 +88,6 @@ const Index = () => {
       );
       setAvailableCategories(categories);
       
-      // Reset the selected category if it's no longer available
       if (selectedCategory) {
         const categoryExists = categories.some(c => c.id === selectedCategory);
         if (!categoryExists) {
@@ -152,7 +142,6 @@ const Index = () => {
     setSelectedCategory(undefined);
   };
 
-  // Show loading state
   if (isLoadingProjects || isLoadingTypes || isLoadingCategories) {
     return (
       <Dashboard>
@@ -168,7 +157,6 @@ const Index = () => {
     );
   }
 
-  // Show error state
   if (isProjectsError) {
     return (
       <Dashboard>

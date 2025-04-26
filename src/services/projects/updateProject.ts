@@ -1,4 +1,3 @@
-
 import { Project, Payment } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -18,15 +17,38 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       projectCategory: updates.projectCategory
     });
     
-    // Validate project type and category IDs
-    if (updates.projectTypeId && !isValidUUID(updates.projectTypeId)) {
-      console.warn("Invalid project type ID format, will be set to null");
-      updates.projectTypeId = null;
+    // Store original values for sample data handling
+    const originalTypeId = updates.projectTypeId;
+    const originalCategoryId = updates.projectCategoryId;
+    const originalTypeName = updates.projectType;
+    const originalCategoryName = updates.projectCategory;
+    
+    // Validate project type and category IDs for database storage
+    let dbTypeId = null;
+    let dbCategoryId = null;
+    
+    if (updates.projectTypeId) {
+      if (updates.projectTypeId.startsWith('type-')) {
+        // This is sample data, we'll store the name but not the ID in the database
+        dbTypeId = null;
+      } else if (isValidUUID(updates.projectTypeId)) {
+        dbTypeId = updates.projectTypeId;
+      } else {
+        console.warn("Invalid project type ID format, will be set to null");
+        dbTypeId = null;
+      }
     }
     
-    if (updates.projectCategoryId && !isValidUUID(updates.projectCategoryId)) {
-      console.warn("Invalid project category ID format, will be set to null");
-      updates.projectCategoryId = null;
+    if (updates.projectCategoryId) {
+      if (updates.projectCategoryId.startsWith('cat-')) {
+        // This is sample data, we'll store the name but not the ID in the database
+        dbCategoryId = null;
+      } else if (isValidUUID(updates.projectCategoryId)) {
+        dbCategoryId = updates.projectCategoryId;
+      } else {
+        console.warn("Invalid project category ID format, will be set to null");
+        dbCategoryId = null;
+      }
     }
     
     // Determine original status (for "In Progress" display)
@@ -49,8 +71,8 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
         budget: updates.price,
         status: ensureValidProjectStatus(updates.status || 'active'),
         original_status: originalStatus,
-        project_type_id: updates.projectTypeId || null,
-        project_category_id: updates.projectCategoryId || null
+        project_type_id: dbTypeId,
+        project_category_id: dbCategoryId
       })
       .eq('id', id)
       .select()
@@ -161,15 +183,16 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       .eq('id', updates.clientId || projectRecord.client_id)
       .single();
     
-    // Fetch project type and category names
-    let projectTypeName = updates.projectType || '';
-    let projectCategoryName = updates.projectCategory || '';
+    // Use original project type and category names if available (from sample data) 
+    // or fetch from database if needed
+    let projectTypeName = originalTypeName || '';
+    let projectCategoryName = originalCategoryName || '';
     
-    if (projectRecord.project_type_id) {
+    if (dbTypeId) {
       const { data: typeData } = await supabase
         .from('project_types')
         .select('name')
-        .eq('id', projectRecord.project_type_id)
+        .eq('id', dbTypeId)
         .maybeSingle();
       
       if (typeData?.name) {
@@ -177,11 +200,11 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       }
     }
     
-    if (projectRecord.project_category_id) {
+    if (dbCategoryId) {
       const { data: categoryData } = await supabase
         .from('project_categories')
         .select('name')
-        .eq('id', projectRecord.project_category_id)
+        .eq('id', dbCategoryId)
         .maybeSingle();
       
       if (categoryData?.name) {
@@ -190,8 +213,8 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
     }
 
     console.log("Project updated with type/category:", {
-      projectTypeId: projectRecord.project_type_id,
-      projectCategoryId: projectRecord.project_category_id,
+      projectTypeId: originalTypeId || projectRecord.project_type_id,
+      projectCategoryId: originalCategoryId || projectRecord.project_category_id,
       projectType: projectTypeName,
       projectCategory: projectCategoryName
     });
@@ -229,8 +252,9 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       originalStatus: typeof projectRecord.original_status === 'string' 
         ? projectRecord.original_status 
         : projectRecord.status,
-      projectTypeId: projectRecord.project_type_id || updates.projectTypeId || "",
-      projectCategoryId: projectRecord.project_category_id || updates.projectCategoryId || "",
+      // Keep the original IDs for sample data  
+      projectTypeId: originalTypeId || projectRecord.project_type_id || "",
+      projectCategoryId: originalCategoryId || projectRecord.project_category_id || "",
       projectType: projectTypeName,
       projectCategory: projectCategoryName,
       url: typeof projectRecord.url === 'string' ? projectRecord.url : '',

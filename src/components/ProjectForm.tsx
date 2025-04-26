@@ -41,6 +41,23 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mapDbClientToClient } from "@/utils/dataMappers";
 
+// Define Client interface to address build error
+interface Client {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  companyId?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 type ProjectStatus = "active" | "completed" | "on-hold" | "cancelled" | "under-revision" | "planning" | "in-progress" | "review";
 
 const formSchema = z.object({
@@ -187,9 +204,7 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
 
       console.log("ProjectForm - Submitting Project with:", {
         typeId: selectedTypeId,
-        categoryId: selectedCategoryId,
-        typeInput: values.projectType,
-        categoryInput: values.projectCategory
+        categoryId: selectedCategoryId
       });
 
       const projectData = {
@@ -208,12 +223,6 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         // Explicitly set project type and category information
         projectTypeId: selectedTypeId || null,
         projectCategoryId: selectedCategoryId || null,
-        projectType: selectedTypeId 
-          ? (clients.find(t => t.id === selectedTypeId)?.name || "")
-          : "",
-        projectCategory: selectedCategoryId 
-          ? (clients.find(c => c.id === selectedCategoryId)?.name || "")
-          : "",
         
         credentials: {
           username: values.username || "",

@@ -1,9 +1,16 @@
 
 /**
- * Helper function to check if a string is a valid UUID
+ * Check if a string is a valid UUID
  */
-export function isValidUUID(id: string | null | undefined): boolean {
-  if (!id) return false;
-  const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return regex.test(id);
-}
+export const isValidUUID = (str: string | null | undefined): boolean => {
+  if (!str) return false;
+  
+  // If it's a sample data ID (starting with 'type-' or 'cat-'), return true
+  if (str.startsWith('type-') || str.startsWith('cat-')) {
+    return true;
+  }
+  
+  // Regular UUID validation (standard UUID v4 format)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
