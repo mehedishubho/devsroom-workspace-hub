@@ -13,7 +13,9 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
   try {
     console.log("Updating project with type/category:", {
       projectTypeId: updates.projectTypeId,
-      projectCategoryId: updates.projectCategoryId
+      projectCategoryId: updates.projectCategoryId,
+      projectType: updates.projectType,
+      projectCategory: updates.projectCategory
     });
     
     // Validate project type and category IDs
@@ -160,8 +162,8 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       .single();
     
     // Fetch project type and category names
-    let projectTypeName = '';
-    let projectCategoryName = '';
+    let projectTypeName = updates.projectType || '';
+    let projectCategoryName = updates.projectCategory || '';
     
     if (projectRecord.project_type_id) {
       const { data: typeData } = await supabase
@@ -170,7 +172,9 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
         .eq('id', projectRecord.project_type_id)
         .maybeSingle();
       
-      projectTypeName = typeData?.name || '';
+      if (typeData?.name) {
+        projectTypeName = typeData.name;
+      }
     }
     
     if (projectRecord.project_category_id) {
@@ -180,8 +184,17 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
         .eq('id', projectRecord.project_category_id)
         .maybeSingle();
       
-      projectCategoryName = categoryData?.name || '';
+      if (categoryData?.name) {
+        projectCategoryName = categoryData.name;
+      }
     }
+
+    console.log("Project updated with type/category:", {
+      projectTypeId: projectRecord.project_type_id,
+      projectCategoryId: projectRecord.project_category_id,
+      projectType: projectTypeName,
+      projectCategory: projectCategoryName
+    });
 
     // Fetch payments for the project
     const { data: paymentData } = await supabase
@@ -216,8 +229,8 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       originalStatus: typeof projectRecord.original_status === 'string' 
         ? projectRecord.original_status 
         : projectRecord.status,
-      projectTypeId: projectRecord.project_type_id,
-      projectCategoryId: projectRecord.project_category_id,
+      projectTypeId: projectRecord.project_type_id || updates.projectTypeId || "",
+      projectCategoryId: projectRecord.project_category_id || updates.projectCategoryId || "",
       projectType: projectTypeName,
       projectCategory: projectCategoryName,
       url: typeof projectRecord.url === 'string' ? projectRecord.url : '',

@@ -23,7 +23,9 @@ import {
   getProjectTypeById, 
   getCategoriesByTypeId, 
   addProjectType, 
-  addProjectCategory 
+  addProjectCategory,
+  sampleProjectTypes,
+  sampleProjectCategories 
 } from "@/data/projectTypes";
 import { ProjectType, ProjectCategory } from "@/types";
 
@@ -154,7 +156,7 @@ const ProjectTypeSelector = ({
 
   // Log selections for debugging
   useEffect(() => {
-    console.log("Current selections:", { 
+    console.log("ProjectTypeSelector - Current selections:", { 
       selectedTypeId, 
       selectedCategoryId,
       typeFound: projectTypes.some(t => t.id === selectedTypeId),
@@ -180,7 +182,7 @@ const ProjectTypeSelector = ({
           </Button>
         </div>
         <Select
-          value={selectedTypeId}
+          value={selectedTypeId || ""}
           onValueChange={onTypeChange}
         >
           <SelectTrigger id="projectType">
@@ -213,7 +215,7 @@ const ProjectTypeSelector = ({
           </Button>
         </div>
         <Select
-          value={selectedCategoryId}
+          value={selectedCategoryId || ""}
           onValueChange={onCategoryChange}
           disabled={!selectedTypeId || categories.length === 0}
         >

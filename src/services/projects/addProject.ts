@@ -22,7 +22,9 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
     
     console.log("Adding project with type/category:", {
       projectTypeId: projectData.projectTypeId,
-      projectCategoryId: projectData.projectCategoryId
+      projectCategoryId: projectData.projectCategoryId,
+      projectType: projectData.projectType,
+      projectCategory: projectData.projectCategory
     });
     
     // Validate project type and category IDs (ensure they're valid UUIDs)
@@ -138,8 +140,8 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       .single();
 
     // Fetch project type and category names
-    let projectTypeName = '';
-    let projectCategoryName = '';
+    let projectTypeName = projectData.projectType || '';
+    let projectCategoryName = projectData.projectCategory || '';
     
     if (projectData.projectTypeId) {
       const { data: typeData } = await supabase
@@ -148,7 +150,9 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
         .eq('id', projectData.projectTypeId)
         .maybeSingle();
       
-      projectTypeName = typeData?.name || '';
+      if (typeData?.name) {
+        projectTypeName = typeData.name;
+      }
     }
     
     if (projectData.projectCategoryId) {
@@ -158,8 +162,17 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
         .eq('id', projectData.projectCategoryId)
         .maybeSingle();
       
-      projectCategoryName = categoryData?.name || '';
+      if (categoryData?.name) {
+        projectCategoryName = categoryData.name;
+      }
     }
+
+    console.log("Project created with type/category:", {
+      projectTypeId: projectData.projectTypeId,
+      projectCategoryId: projectData.projectCategoryId,
+      projectType: projectTypeName,
+      projectCategory: projectCategoryName
+    });
 
     // Construct and return the full project object
     const newProject: Project = {
@@ -176,8 +189,8 @@ export const addProject = async (projectData: Partial<Project>): Promise<Project
       originalStatus: typeof projectRecord.original_status === 'string' 
         ? projectRecord.original_status 
         : projectRecord.status,
-      projectTypeId: projectRecord.project_type_id,
-      projectCategoryId: projectRecord.project_category_id,
+      projectTypeId: projectRecord.project_type_id || projectData.projectTypeId || "",
+      projectCategoryId: projectRecord.project_category_id || projectData.projectCategoryId || "",
       projectType: projectTypeName,
       projectCategory: projectCategoryName,
       credentials: projectData.credentials || { username: '', password: '', notes: '' },

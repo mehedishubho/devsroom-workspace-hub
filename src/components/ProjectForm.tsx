@@ -151,6 +151,15 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
     }
   };
 
+  useEffect(() => {
+    console.log("ProjectForm - Initial project type and category:", {
+      initialTypeId: initialData?.projectTypeId,
+      initialCategoryId: initialData?.projectCategoryId,
+      selectedTypeId,
+      selectedCategoryId
+    });
+  }, [initialData]);
+
   const handleSubmitForm = async (values: z.infer<typeof formSchema>) => {
     try {
       let clientId = values.clientId;
@@ -174,8 +183,18 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         }
       }
 
+      console.log("ProjectForm - Submitting with type/category:", {
+        selectedTypeId,
+        selectedCategoryId,
+        selectedTypeName: clients.find(t => t.id === selectedTypeId)?.name || "",
+        selectedCategoryName: clients.find(c => c.id === selectedCategoryId)?.name || ""
+      });
+
       const projectStatus = mapFormStatusToProjectStatus(values.projectStatus);
       const originalStatus = values.projectStatus;
+
+      const projectTypeName = clients.find(t => t.id === selectedTypeId)?.name || "";
+      const projectCategoryName = clients.find(c => c.id === selectedCategoryId)?.name || "";
 
       const projectData = {
         ...(initialData || {}),
@@ -189,8 +208,10 @@ const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
         status: projectStatus,
         originalStatus: originalStatus,
         price: values.budget ? parseFloat(values.budget) : 0,
-        projectTypeId: selectedTypeId,
-        projectCategoryId: selectedCategoryId,
+        projectTypeId: selectedTypeId || null,
+        projectCategoryId: selectedCategoryId || null,
+        projectType: projectTypeName,
+        projectCategory: projectCategoryName,
         updatedAt: new Date(),
         credentials: {
           username: values.username || "",
