@@ -19,7 +19,7 @@ interface User {
 
 // Admin credentials - configured to match the database user
 const ADMIN_EMAIL = "mehedihassanshubho@gmail.com";
-const ADMIN_PASSWORD = "125524429056MEHEDI";
+const ADMIN_PASSWORD = "WorkspaceAdmin";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
