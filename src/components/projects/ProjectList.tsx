@@ -22,12 +22,10 @@ export const ProjectList = ({ projects, hasFilters, onAddProject }: ProjectListP
         }
         icon={hasFilters ? <ListFilter className="h-6 w-6 text-primary" /> : <PlusCircle className="h-6 w-6 text-primary" />}
         action={
-          hasFilters
-            ? undefined
-            : {
-                label: "Add Project",
-                onClick: onAddProject,
-              }
+          {
+            label: hasFilters ? "Clear filters" : "Add Project",
+            onClick: onAddProject,
+          }
         }
       />
     );

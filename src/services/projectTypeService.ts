@@ -1,7 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectType, ProjectCategory } from "@/types";
-import { sampleProjectTypes, sampleProjectCategories } from "@/data/projectTypes";
 import { isValidUUID } from "@/services/projects/utils";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Get all project types
@@ -15,11 +16,14 @@ export const getProjectTypes = async (): Promise<ProjectType[]> => {
     
     if (error) {
       console.error('Error fetching project types from Supabase:', error);
-      console.log('Falling back to sample project types');
-      return [...sampleProjectTypes];
+      toast({
+        title: "Error",
+        description: "Failed to fetch project types",
+        variant: "destructive"
+      });
+      return [];
     }
     
-    // If we have data from the database, return it
     if (data && data.length > 0) {
       return data.map(item => ({
         id: item.id,
@@ -29,11 +33,15 @@ export const getProjectTypes = async (): Promise<ProjectType[]> => {
       }));
     }
     
-    // Otherwise fall back to sample data
-    return [...sampleProjectTypes];
+    return [];
   } catch (error) {
     console.error('Error in getProjectTypes:', error);
-    return [...sampleProjectTypes];
+    toast({
+      title: "Error",
+      description: "Failed to fetch project types",
+      variant: "destructive"
+    });
+    return [];
   }
 };
 
@@ -49,11 +57,14 @@ export const getProjectCategories = async (): Promise<ProjectCategory[]> => {
     
     if (error) {
       console.error('Error fetching project categories from Supabase:', error);
-      console.log('Falling back to sample project categories');
-      return [...sampleProjectCategories];
+      toast({
+        title: "Error",
+        description: "Failed to fetch project categories",
+        variant: "destructive"
+      });
+      return [];
     }
     
-    // If we have data from the database, return it
     if (data && data.length > 0) {
       return data.map(item => ({
         id: item.id,
@@ -64,11 +75,15 @@ export const getProjectCategories = async (): Promise<ProjectCategory[]> => {
       }));
     }
     
-    // Otherwise fall back to sample data
-    return [...sampleProjectCategories];
+    return [];
   } catch (error) {
     console.error('Error in getProjectCategories:', error);
-    return [...sampleProjectCategories];
+    toast({
+      title: "Error",
+      description: "Failed to fetch project categories",
+      variant: "destructive"
+    });
+    return [];
   }
 };
 
@@ -77,21 +92,16 @@ export const getProjectCategories = async (): Promise<ProjectCategory[]> => {
  */
 export const getCategoriesByType = async (projectTypeId: string): Promise<ProjectCategory[]> => {
   try {
-    // Add validation for the projectTypeId format
     if (!projectTypeId || typeof projectTypeId !== 'string') {
       console.error('Invalid projectTypeId provided:', projectTypeId);
       return [];
     }
     
-    // For sample data IDs that start with "type-", use the local data
-    if (projectTypeId.startsWith('type-')) {
-      const filteredCategories = sampleProjectCategories.filter(
-        cat => cat.projectTypeId === projectTypeId
-      );
-      return [...filteredCategories];
+    if (!isValidUUID(projectTypeId)) {
+      console.error('Invalid UUID format for projectTypeId:', projectTypeId);
+      return [];
     }
     
-    // Otherwise query the database
     const { data, error } = await supabase
       .from('project_categories')
       .select('*')
@@ -100,11 +110,7 @@ export const getCategoriesByType = async (projectTypeId: string): Promise<Projec
     
     if (error) {
       console.error('Error fetching project categories by type from Supabase:', error);
-      console.log('Falling back to sample categories');
-      const filteredCategories = sampleProjectCategories.filter(
-        cat => cat.projectTypeId === projectTypeId
-      );
-      return [...filteredCategories];
+      return [];
     }
     
     if (data && data.length > 0) {
@@ -117,14 +123,10 @@ export const getCategoriesByType = async (projectTypeId: string): Promise<Projec
       }));
     }
     
-    // If no categories found for this type, return empty array
     return [];
   } catch (error) {
     console.error('Error in getCategoriesByType:', error);
-    const filteredCategories = sampleProjectCategories.filter(
-      cat => cat.projectTypeId === projectTypeId
-    );
-    return [...filteredCategories];
+    return [];
   }
 };
 
@@ -133,15 +135,8 @@ export const getCategoriesByType = async (projectTypeId: string): Promise<Projec
  */
 export const getProjectTypeById = async (id: string): Promise<ProjectType | null> => {
   try {
-    if (!id) return null;
+    if (!id || !isValidUUID(id)) return null;
     
-    // For sample data IDs that start with "type-", use the local data
-    if (id.startsWith('type-')) {
-      const type = sampleProjectTypes.find(t => t.id === id);
-      return type || null;
-    }
-    
-    // Otherwise query the database
     const { data, error } = await supabase
       .from('project_types')
       .select('*')
@@ -150,9 +145,7 @@ export const getProjectTypeById = async (id: string): Promise<ProjectType | null
     
     if (error) {
       console.error('Error fetching project type by ID from Supabase:', error);
-      console.log('Falling back to sample project types');
-      const type = sampleProjectTypes.find(t => t.id === id);
-      return type || null;
+      return null;
     }
     
     if (data) {
@@ -167,8 +160,7 @@ export const getProjectTypeById = async (id: string): Promise<ProjectType | null
     return null;
   } catch (error) {
     console.error('Error in getProjectTypeById:', error);
-    const type = sampleProjectTypes.find(t => t.id === id);
-    return type || null;
+    return null;
   }
 };
 
@@ -177,15 +169,8 @@ export const getProjectTypeById = async (id: string): Promise<ProjectType | null
  */
 export const getProjectCategoryById = async (id: string): Promise<ProjectCategory | null> => {
   try {
-    if (!id) return null;
+    if (!id || !isValidUUID(id)) return null;
     
-    // For sample data IDs that start with "cat-", use the local data
-    if (id.startsWith('cat-')) {
-      const category = sampleProjectCategories.find(c => c.id === id);
-      return category || null;
-    }
-    
-    // Otherwise query the database
     const { data, error } = await supabase
       .from('project_categories')
       .select('*')
@@ -194,9 +179,7 @@ export const getProjectCategoryById = async (id: string): Promise<ProjectCategor
     
     if (error) {
       console.error('Error fetching project category by ID from Supabase:', error);
-      console.log('Falling back to sample project categories');
-      const category = sampleProjectCategories.find(c => c.id === id);
-      return category || null;
+      return null;
     }
     
     if (data) {
@@ -212,15 +195,14 @@ export const getProjectCategoryById = async (id: string): Promise<ProjectCategor
     return null;
   } catch (error) {
     console.error('Error in getProjectCategoryById:', error);
-    const category = sampleProjectCategories.find(c => c.id === id);
-    return category || null;
+    return null;
   }
 };
 
 /**
  * Add a new project type
  */
-export const addProjectType = async (name: string): Promise<ProjectType> => {
+export const addProjectType = async (name: string): Promise<ProjectType | null> => {
   try {
     const { data, error } = await supabase
       .from('project_types')
@@ -230,15 +212,12 @@ export const addProjectType = async (name: string): Promise<ProjectType> => {
     
     if (error) {
       console.error('Error adding project type to Supabase:', error);
-      // Fall back to adding in memory
-      const newType = {
-        id: `type-${Date.now()}`,
-        name,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      sampleProjectTypes.push(newType);
-      return newType;
+      toast({
+        title: "Error",
+        description: "Failed to add project type",
+        variant: "destructive"
+      });
+      return null;
     }
     
     return {
@@ -249,37 +228,133 @@ export const addProjectType = async (name: string): Promise<ProjectType> => {
     };
   } catch (error) {
     console.error('Error in addProjectType:', error);
-    // Fall back to adding in memory
-    const newType = {
-      id: `type-${Date.now()}`,
-      name,
-      createdAt: new Date(),
-      updatedAt: new Date()
+    toast({
+      title: "Error",
+      description: "Failed to add project type",
+      variant: "destructive"
+    });
+    return null;
+  }
+};
+
+/**
+ * Update existing project type
+ */
+export const updateProjectType = async (id: string, name: string): Promise<ProjectType | null> => {
+  try {
+    if (!isValidUUID(id)) {
+      console.error('Invalid UUID format for project type ID:', id);
+      toast({
+        title: "Error",
+        description: "Invalid project type ID",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    const { data, error } = await supabase
+      .from('project_types')
+      .update({ name, updated_at: new Date() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating project type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update project type",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
     };
-    sampleProjectTypes.push(newType);
-    return newType;
+  } catch (error) {
+    console.error('Error in updateProjectType:', error);
+    toast({
+      title: "Error",
+      description: "Failed to update project type",
+      variant: "destructive"
+    });
+    return null;
+  }
+};
+
+/**
+ * Delete project type (and its categories)
+ */
+export const deleteProjectType = async (id: string): Promise<boolean> => {
+  try {
+    if (!isValidUUID(id)) {
+      console.error('Invalid UUID format for project type ID:', id);
+      toast({
+        title: "Error",
+        description: "Invalid project type ID",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    // Delete associated categories first
+    const { error: catError } = await supabase
+      .from('project_categories')
+      .delete()
+      .eq('project_type_id', id);
+    
+    if (catError) {
+      console.error('Error deleting associated categories:', catError);
+      // Continue anyway to try deleting the project type
+    }
+    
+    // Now delete the project type
+    const { error } = await supabase
+      .from('project_types')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting project type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete project type",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in deleteProjectType:', error);
+    toast({
+      title: "Error",
+      description: "Failed to delete project type",
+      variant: "destructive"
+    });
+    return false;
   }
 };
 
 /**
  * Add a new project category
  */
-export const addProjectCategory = async (name: string, projectTypeId: string): Promise<ProjectCategory> => {
+export const addProjectCategory = async (name: string, projectTypeId: string): Promise<ProjectCategory | null> => {
   try {
-    // If using a sample project type ID, keep using sample data
-    if (projectTypeId.startsWith('type-')) {
-      const newCategory = {
-        id: `cat-${Date.now()}`,
-        name,
-        projectTypeId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      sampleProjectCategories.push(newCategory);
-      return newCategory;
+    if (!isValidUUID(projectTypeId)) {
+      console.error('Invalid UUID format for project type ID:', projectTypeId);
+      toast({
+        title: "Error",
+        description: "Invalid project type ID",
+        variant: "destructive"
+      });
+      return null;
     }
     
-    // Otherwise insert to database
     const { data, error } = await supabase
       .from('project_categories')
       .insert({ 
@@ -291,16 +366,12 @@ export const addProjectCategory = async (name: string, projectTypeId: string): P
     
     if (error) {
       console.error('Error adding project category to Supabase:', error);
-      // Fall back to adding in memory
-      const newCategory = {
-        id: `cat-${Date.now()}`,
-        name,
-        projectTypeId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      sampleProjectCategories.push(newCategory);
-      return newCategory;
+      toast({
+        title: "Error",
+        description: "Failed to add project category",
+        variant: "destructive"
+      });
+      return null;
     }
     
     return {
@@ -312,15 +383,107 @@ export const addProjectCategory = async (name: string, projectTypeId: string): P
     };
   } catch (error) {
     console.error('Error in addProjectCategory:', error);
-    // Fall back to adding in memory
-    const newCategory = {
-      id: `cat-${Date.now()}`,
-      name,
-      projectTypeId,
-      createdAt: new Date(),
-      updatedAt: new Date()
+    toast({
+      title: "Error",
+      description: "Failed to add project category",
+      variant: "destructive"
+    });
+    return null;
+  }
+};
+
+/**
+ * Update existing project category
+ */
+export const updateProjectCategory = async (id: string, name: string, projectTypeId: string): Promise<ProjectCategory | null> => {
+  try {
+    if (!isValidUUID(id) || !isValidUUID(projectTypeId)) {
+      console.error('Invalid UUID format:', { categoryId: id, projectTypeId });
+      toast({
+        title: "Error",
+        description: "Invalid ID format",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    const { data, error } = await supabase
+      .from('project_categories')
+      .update({ 
+        name,
+        project_type_id: projectTypeId,
+        updated_at: new Date()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating project category:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update project category",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    return {
+      id: data.id,
+      name: data.name,
+      projectTypeId: data.project_type_id,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
     };
-    sampleProjectCategories.push(newCategory);
-    return newCategory;
+  } catch (error) {
+    console.error('Error in updateProjectCategory:', error);
+    toast({
+      title: "Error",
+      description: "Failed to update project category",
+      variant: "destructive"
+    });
+    return null;
+  }
+};
+
+/**
+ * Delete project category
+ */
+export const deleteProjectCategory = async (id: string): Promise<boolean> => {
+  try {
+    if (!isValidUUID(id)) {
+      console.error('Invalid UUID format for category ID:', id);
+      toast({
+        title: "Error",
+        description: "Invalid category ID",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    const { error } = await supabase
+      .from('project_categories')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting project category:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete project category",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in deleteProjectCategory:', error);
+    toast({
+      title: "Error",
+        description: "Failed to delete project category",
+        variant: "destructive"
+      });
+    return false;
   }
 };

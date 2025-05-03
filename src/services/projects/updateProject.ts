@@ -1,3 +1,4 @@
+
 import { Project, Payment } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -17,35 +18,11 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       projectCategory: updates.projectCategory
     });
     
-    // Store original values for sample data handling
+    // Store original values for type/category handling
     const originalTypeId = updates.projectTypeId;
     const originalCategoryId = updates.projectCategoryId;
     const originalTypeName = updates.projectType;
     const originalCategoryName = updates.projectCategory;
-    
-    // Determine which values to save to the database
-    let dbTypeId = null;
-    let dbCategoryId = null;
-    
-    // Handle sample data IDs properly
-    if (originalTypeId && originalTypeId.startsWith('type-')) {
-      // Keep track of the name but don't use the sample ID in the database
-      dbTypeId = null;
-    } else if (originalTypeId && isValidUUID(originalTypeId)) {
-      // Use the real UUID in the database
-      dbTypeId = originalTypeId;
-    }
-    
-    if (originalCategoryId && originalCategoryId.startsWith('cat-')) {
-      // Keep track of the name but don't use the sample ID in the database
-      dbCategoryId = null;
-    } else if (originalCategoryId && isValidUUID(originalCategoryId)) {
-      // Use the real UUID in the database
-      dbCategoryId = originalCategoryId;
-    }
-    
-    // Determine original status (for "In Progress" display)
-    const originalStatus = updates.originalStatus || updates.status || 'active';
     
     // Update the main project record
     const { data: projectRecord, error: projectError } = await supabase
@@ -63,9 +40,9 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
           : updates.endDate ? String(updates.endDate) : null,
         budget: updates.price,
         status: ensureValidProjectStatus(updates.status || 'active'),
-        original_status: originalStatus,
-        project_type_id: dbTypeId,
-        project_category_id: dbCategoryId
+        original_status: updates.originalStatus || updates.status || 'active',
+        project_type_id: isValidUUID(originalTypeId) ? originalTypeId : null,
+        project_category_id: isValidUUID(originalCategoryId) ? originalCategoryId : null
       })
       .eq('id', id)
       .select()
@@ -175,11 +152,18 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
     }
 
     // Fetch the client name
-    const { data: clientData } = await supabase
-      .from('clients')
-      .select('name')
-      .eq('id', updates.clientId || projectRecord.client_id)
-      .single();
+    let clientName = "Unknown Client";
+    if (updates.clientId || projectRecord.client_id) {
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('name')
+        .eq('id', updates.clientId || projectRecord.client_id)
+        .maybeSingle();
+      
+      if (clientData) {
+        clientName = clientData.name;
+      }
+    }
     
     // Fetch payments for the project
     const { data: paymentData } = await supabase
@@ -200,12 +184,40 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
     // Sort payments by date
     mappedPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+    // Fetch type and category names if they exist
+    let typeName = originalTypeName || "";
+    let categoryName = originalCategoryName || "";
+    
+    if (isValidUUID(originalTypeId)) {
+      const { data: typeData } = await supabase
+        .from('project_types')
+        .select('name')
+        .eq('id', originalTypeId)
+        .maybeSingle();
+      
+      if (typeData) {
+        typeName = typeData.name;
+      }
+    }
+    
+    if (isValidUUID(originalCategoryId)) {
+      const { data: categoryData } = await supabase
+        .from('project_categories')
+        .select('name')
+        .eq('id', originalCategoryId)
+        .maybeSingle();
+      
+      if (categoryData) {
+        categoryName = categoryData.name;
+      }
+    }
+
     // Construct and return the updated project object
     const updatedProject: Project = {
       id: projectRecord.id,
       name: projectRecord.name,
       clientId: projectRecord.client_id,
-      clientName: clientData?.name || 'Unknown Client',
+      clientName: clientName,
       description: projectRecord.description || '',
       startDate: new Date(projectRecord.start_date),
       endDate: projectRecord.deadline_date ? new Date(projectRecord.deadline_date) : undefined,
@@ -214,11 +226,10 @@ export const updateProject = async (id: string, updates: Partial<Project>): Prom
       originalStatus: typeof projectRecord.original_status === 'string' 
         ? projectRecord.original_status 
         : projectRecord.status,
-      // Keep the original IDs and names for consistent UI display
-      projectTypeId: originalTypeId || "",
-      projectCategoryId: originalCategoryId || "",
-      projectType: originalTypeName || "",
-      projectCategory: originalCategoryName || "",
+      projectTypeId: isValidUUID(originalTypeId) ? originalTypeId : "",
+      projectCategoryId: isValidUUID(originalCategoryId) ? originalCategoryId : "",
+      projectType: typeName,
+      projectCategory: categoryName,
       url: typeof projectRecord.url === 'string' ? projectRecord.url : '',
       credentials: updates.credentials || { username: '', password: '', notes: '' },
       hosting: updates.hosting || { 

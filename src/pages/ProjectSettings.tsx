@@ -10,23 +10,23 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash, Edit, Plus, Save } from "lucide-react";
-import { 
-  sampleProjectTypes, 
-  sampleProjectCategories,
+import { ProjectType, ProjectCategory } from "@/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getProjectTypes,
+  getProjectCategories,
+  getCategoriesByType,
   addProjectType,
   updateProjectType,
   deleteProjectType,
   addProjectCategory,
   updateProjectCategory,
-  deleteProjectCategory,
-  getCategoriesByTypeId
-} from "@/data/projectTypes";
-import { ProjectType, ProjectCategory } from "@/types";
+  deleteProjectCategory
+} from "@/services/projectTypeService";
 
 const ProjectSettings = () => {
   const { toast } = useToast();
-  const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
-  const [categories, setCategories] = useState<ProjectCategory[]>([]);
+  const queryClient = useQueryClient();
   
   // Type dialog state
   const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false);
@@ -39,11 +39,132 @@ const ProjectSettings = () => {
   const [categoryName, setCategoryName] = useState("");
   const [selectedTypeId, setSelectedTypeId] = useState("");
 
-  // Load data
-  useEffect(() => {
-    setProjectTypes([...sampleProjectTypes]);
-    setCategories([...sampleProjectCategories]);
-  }, []);
+  // Fetch types and categories using React Query
+  const { data: projectTypes = [] } = useQuery({
+    queryKey: ['projectTypes'],
+    queryFn: getProjectTypes
+  });
+  
+  const { data: categories = [] } = useQuery({
+    queryKey: ['projectCategories'],
+    queryFn: getProjectCategories
+  });
+
+  // Create mutations
+  const addTypeMutation = useMutation({
+    mutationFn: (name: string) => addProjectType(name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectTypes'] });
+      setIsTypeDialogOpen(false);
+      toast({
+        title: "Project type added",
+        description: "New project type has been created."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add project type.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  const updateTypeMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => updateProjectType(id, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectTypes'] });
+      setIsTypeDialogOpen(false);
+      toast({
+        title: "Project type updated",
+        description: "Changes have been saved successfully."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update project type.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  const deleteTypeMutation = useMutation({
+    mutationFn: (id: string) => deleteProjectType(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectTypes'] });
+      queryClient.invalidateQueries({ queryKey: ['projectCategories'] });
+      toast({
+        title: "Project type deleted",
+        description: "The project type and its categories have been removed."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete project type.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  const addCategoryMutation = useMutation({
+    mutationFn: ({ name, typeId }: { name: string; typeId: string }) => 
+      addProjectCategory(name, typeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectCategories'] });
+      setIsCategoryDialogOpen(false);
+      toast({
+        title: "Category added",
+        description: "New category has been created."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add category.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ id, name, typeId }: { id: string; name: string; typeId: string }) => 
+      updateProjectCategory(id, name, typeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectCategories'] });
+      setIsCategoryDialogOpen(false);
+      toast({
+        title: "Category updated",
+        description: "Changes have been saved successfully."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update category.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  const deleteCategoryMutation = useMutation({
+    mutationFn: (id: string) => deleteProjectCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectCategories'] });
+      toast({
+        title: "Category deleted",
+        description: "The category has been removed."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete category.",
+        variant: "destructive"
+      });
+    }
+  });
 
   // Type handlers
   const handleAddType = () => {
@@ -60,23 +181,7 @@ const ProjectSettings = () => {
 
   const handleDeleteType = (typeId: string) => {
     if (window.confirm("Are you sure you want to delete this project type? This will also delete all associated categories.")) {
-      const success = deleteProjectType(typeId);
-      
-      if (success) {
-        setProjectTypes([...sampleProjectTypes]);
-        setCategories([...sampleProjectCategories]);
-        
-        toast({
-          title: "Project type deleted",
-          description: "The project type and its categories have been removed."
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Could not delete the project type.",
-          variant: "destructive"
-        });
-      }
+      deleteTypeMutation.mutate(typeId);
     }
   };
 
@@ -92,27 +197,11 @@ const ProjectSettings = () => {
 
     if (currentType) {
       // Update existing type
-      const updatedType = updateProjectType(currentType.id, typeName);
-      
-      if (updatedType) {
-        setProjectTypes([...sampleProjectTypes]);
-        toast({
-          title: "Project type updated",
-          description: "Changes have been saved successfully."
-        });
-      }
+      updateTypeMutation.mutate({ id: currentType.id, name: typeName });
     } else {
       // Add new type
-      const newType = addProjectType(typeName);
-      setProjectTypes([...sampleProjectTypes]);
-      
-      toast({
-        title: "Project type added",
-        description: "New project type has been created."
-      });
+      addTypeMutation.mutate(typeName);
     }
-    
-    setIsTypeDialogOpen(false);
   };
 
   // Category handlers
@@ -126,28 +215,13 @@ const ProjectSettings = () => {
   const handleEditCategory = (category: ProjectCategory) => {
     setCurrentCategory(category);
     setCategoryName(category.name);
-    setSelectedTypeId(category.projectTypeId);
+    setSelectedTypeId(category.projectTypeId || "");
     setIsCategoryDialogOpen(true);
   };
 
   const handleDeleteCategory = (categoryId: string) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
-      const success = deleteProjectCategory(categoryId);
-      
-      if (success) {
-        setCategories([...sampleProjectCategories]);
-        
-        toast({
-          title: "Category deleted",
-          description: "The category has been removed."
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Could not delete the category.",
-          variant: "destructive"
-        });
-      }
+      deleteCategoryMutation.mutate(categoryId);
     }
   };
 
@@ -172,31 +246,23 @@ const ProjectSettings = () => {
 
     if (currentCategory) {
       // Update existing category
-      const updatedCategory = updateProjectCategory(
-        currentCategory.id, 
-        categoryName, 
-        selectedTypeId
-      );
-      
-      if (updatedCategory) {
-        setCategories([...sampleProjectCategories]);
-        toast({
-          title: "Category updated",
-          description: "Changes have been saved successfully."
-        });
-      }
+      updateCategoryMutation.mutate({
+        id: currentCategory.id,
+        name: categoryName,
+        typeId: selectedTypeId
+      });
     } else {
       // Add new category
-      const newCategory = addProjectCategory(categoryName, selectedTypeId);
-      setCategories([...sampleProjectCategories]);
-      
-      toast({
-        title: "Category added",
-        description: "New category has been created."
+      addCategoryMutation.mutate({
+        name: categoryName,
+        typeId: selectedTypeId
       });
     }
-    
-    setIsCategoryDialogOpen(false);
+  };
+
+  // Helper function to get categories for a type
+  const getCategoriesForType = (typeId: string): ProjectCategory[] => {
+    return categories.filter(cat => cat.projectTypeId === typeId);
   };
 
   return (
@@ -236,7 +302,7 @@ const ProjectSettings = () => {
                     <CardContent>
                       <div className="flex justify-between">
                         <p className="text-sm text-muted-foreground">
-                          {getCategoriesByTypeId(type.id).length} categories
+                          {getCategoriesForType(type.id).length} categories
                         </p>
                         <div className="flex gap-2">
                           <Button 
@@ -373,9 +439,13 @@ const ProjectSettings = () => {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSaveType} className="gap-1">
+              <Button 
+                onClick={handleSaveType} 
+                className="gap-1"
+                disabled={addTypeMutation.isPending || updateTypeMutation.isPending}
+              >
                 <Save className="h-4 w-4" />
-                Save
+                {addTypeMutation.isPending || updateTypeMutation.isPending ? "Saving..." : "Save"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -437,9 +507,13 @@ const ProjectSettings = () => {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSaveCategory} className="gap-1">
+              <Button 
+                onClick={handleSaveCategory} 
+                className="gap-1"
+                disabled={addCategoryMutation.isPending || updateCategoryMutation.isPending}
+              >
                 <Save className="h-4 w-4" />
-                Save
+                {addCategoryMutation.isPending || updateCategoryMutation.isPending ? "Saving..." : "Save"}
               </Button>
             </DialogFooter>
           </DialogContent>

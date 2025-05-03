@@ -4,6 +4,7 @@ export { getProjects } from './getProjects';
 export { addProject } from './addProject';
 export { updateProject } from './updateProject';
 export { checkAndUpdateProjectsSchema } from './migrations';
+export { isValidUUID } from './utils';
 
 // Run schema check on module import
 import { checkAndUpdateProjectsSchema } from './migrations';

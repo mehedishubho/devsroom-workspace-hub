@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types";
 import { mapDbClientToClient } from "@/utils/dataMappers";
-import { simplifiedToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export const getClients = async (): Promise<Client[]> => {
   try {
@@ -17,7 +17,11 @@ export const getClients = async (): Promise<Client[]> => {
     return data.map(client => mapDbClientToClient(client));
   } catch (error) {
     console.error('Error fetching clients:', error);
-    simplifiedToast.error("Failed to fetch clients. Please try again.");
+    toast({
+      title: "Error",
+      description: "Failed to fetch clients. Please try again.",
+      variant: "destructive"
+    });
     return [];
   }
 };
@@ -36,7 +40,11 @@ export const getClientsByCompanyId = async (companyId: string): Promise<Client[]
     return data.map(client => mapDbClientToClient(client));
   } catch (error) {
     console.error(`Error fetching clients for company ${companyId}:`, error);
-    simplifiedToast.error("Failed to fetch company clients. Please try again.");
+    toast({
+      title: "Error",
+      description: "Failed to fetch company clients. Please try again.",
+      variant: "destructive"
+    });
     return [];
   }
 };
@@ -54,7 +62,11 @@ export const getClientById = async (id: string): Promise<Client | null> => {
     return mapDbClientToClient(data);
   } catch (error) {
     console.error(`Error fetching client with ID ${id}:`, error);
-    simplifiedToast.error("Failed to fetch client details. Please try again.");
+    toast({
+      title: "Error",
+      description: "Failed to fetch client details. Please try again.",
+      variant: "destructive"
+    });
     return null;
   }
 };
@@ -82,7 +94,11 @@ export const addClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'u
     return mapDbClientToClient(data);
   } catch (error) {
     console.error('Error adding client:', error);
-    simplifiedToast.error("Failed to add client. Please try again.");
+    toast({
+      title: "Error",
+      description: "Failed to add client. Please try again.",
+      variant: "destructive"
+    });
     return null;
   }
 };
