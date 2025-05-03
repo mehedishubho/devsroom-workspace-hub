@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import PaymentItemWithCurrency from "@/components/ui-custom/PaymentItemWithCurrency";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { updateProject } from "@/services/projects";
 
@@ -23,6 +25,7 @@ const ProjectDetails = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -287,177 +290,223 @@ const ProjectDetails = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="col-span-1 lg:col-span-3 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Project Overview</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
-                    <p>{project.description || "No description provided."}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Project URL</h3>
-                    <a 
-                      href={project.url || "#"} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline break-all"
-                    >
-                      {project.url || "No URL provided."}
-                    </a>
-                  </div>
-
-                  {project.notes && (
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Notes</h3>
-                      <p>{project.notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Access & Credentials</CardTitle>
-                  <CardDescription>Project access information</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium">Project Credentials</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md">
-                      <div>
-                        <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
-                        <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.credentials?.username || "No username provided"}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
-                        <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.credentials?.password || "No password provided"}
-                        </div>
-                      </div>
-                      {project.credentials?.notes && (
-                        <div className="sm:col-span-2">
-                          <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
-                          <div className="text-sm">{project.credentials.notes}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium">Hosting Information</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md">
-                      <div>
-                        <h4 className="text-xs text-muted-foreground mb-1">Provider</h4>
-                        <div className="text-sm">{project.hosting?.provider || "No provider specified"}</div>
-                      </div>
-                      {project.hosting?.url && (
+              <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid grid-cols-3 md:grid-cols-4 w-full mb-6">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="payments">Payments</TabsTrigger>
+                  <TabsTrigger value="credentials">Credentials</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="overview" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Project Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <h4 className="text-xs text-muted-foreground mb-1">URL</h4>
+                          <h3 className="text-sm font-medium text-muted-foreground mb-1">Project Name</h3>
+                          <p className="font-semibold">{project.name}</p>
+                        </div>
+                        
+                        <div>
+                          <h3 className="text-sm font-medium text-muted-foreground mb-1">Client</h3>
+                          <p>{project.clientName}</p>
+                        </div>
+
+                        {project.projectType && (
+                          <div>
+                            <h3 className="text-sm font-medium text-muted-foreground mb-1">Project Type</h3>
+                            <p>{project.projectType}</p>
+                          </div>
+                        )}
+                        
+                        {project.projectCategory && (
+                          <div>
+                            <h3 className="text-sm font-medium text-muted-foreground mb-1">Category</h3>
+                            <p>{project.projectCategory}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <Separator className="my-2" />
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+                        <p>{project.description || "No description provided."}</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Project URL</h3>
+                        {project.url ? (
                           <a 
-                            href={project.hosting.url} 
+                            href={project.url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-primary hover:underline text-sm break-all"
+                            className="text-primary hover:underline break-all"
                           >
-                            {project.hosting.url}
+                            {project.url}
                           </a>
-                        </div>
-                      )}
-                      <div>
-                        <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
-                        <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.hosting?.credentials?.username || "No username provided"}
-                        </div>
+                        ) : (
+                          <p className="text-muted-foreground italic">No URL provided.</p>
+                        )}
                       </div>
-                      <div>
-                        <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
-                        <div className="font-mono text-sm bg-background p-2 rounded border">
-                          {project.hosting?.credentials?.password || "No password provided"}
-                        </div>
-                      </div>
-                      {project.hosting?.notes && (
-                        <div className="sm:col-span-2">
-                          <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
-                          <div className="text-sm">{project.hosting.notes}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
 
-                  {project.otherAccess && project.otherAccess.length > 0 && (
-                    <>
-                      <Separator />
+                      {project.notes && (
+                        <div>
+                          <h3 className="text-sm font-medium text-muted-foreground mb-1">Notes</h3>
+                          <p>{project.notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="payments" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Payments</CardTitle>
+                      <CardDescription>Payment history and schedule</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {!project.payments || project.payments.length === 0 ? (
+                        <div className="text-center py-6">
+                          <p className="text-muted-foreground">No payments added yet</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {project.payments.map((payment, index) => (
+                            <PaymentItemWithCurrency 
+                              key={payment.id || index} 
+                              payment={payment}
+                              onUpdate={() => {}} 
+                              onDelete={() => {}}
+                              editable={false}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="credentials" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Access & Credentials</CardTitle>
+                      <CardDescription>Project access information</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
                       <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Other Access</h3>
-                        {project.otherAccess.map((access) => (
-                          <div 
-                            key={access.id} 
-                            className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md"
-                          >
-                            <div className="sm:col-span-2 flex items-center justify-between">
-                              <div>
-                                <h4 className="font-medium">{access.name}</h4>
-                                <span className="text-xs uppercase text-muted-foreground">{access.type}</span>
-                              </div>
+                        <h3 className="text-sm font-medium">Project Credentials</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md">
+                          <div>
+                            <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
+                            <div className="font-mono text-sm bg-background p-2 rounded border">
+                              {project.credentials?.username || "No username provided"}
                             </div>
-                            <div>
-                              <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
-                              <div className="font-mono text-sm bg-background p-2 rounded border">
-                                {access.credentials?.username || "No username provided"}
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
-                              <div className="font-mono text-sm bg-background p-2 rounded border">
-                                {access.credentials?.password || "No password provided"}
-                              </div>
-                            </div>
-                            {access.notes && (
-                              <div className="sm:col-span-2">
-                                <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
-                                <div className="text-sm">{access.notes}</div>
-                              </div>
-                            )}
                           </div>
-                        ))}
+                          <div>
+                            <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
+                            <div className="font-mono text-sm bg-background p-2 rounded border">
+                              {project.credentials?.password || "No password provided"}
+                            </div>
+                          </div>
+                          {project.credentials?.notes && (
+                            <div className="sm:col-span-2">
+                              <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
+                              <div className="text-sm">{project.credentials.notes}</div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payments</CardTitle>
-                  <CardDescription>Payment history and schedule</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!project.payments || project.payments.length === 0 ? (
-                    <div className="text-center py-6">
-                      <p className="text-muted-foreground">No payments added yet</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {project.payments.map((payment, index) => (
-                        <PaymentItemWithCurrency 
-                          key={payment.id || index} 
-                          payment={payment}
-                          onUpdate={() => {}} 
-                          onDelete={() => {}}
-                          editable={false}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      <Separator />
+
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-medium">Hosting Information</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md">
+                          <div>
+                            <h4 className="text-xs text-muted-foreground mb-1">Provider</h4>
+                            <div className="text-sm">{project.hosting?.provider || "No provider specified"}</div>
+                          </div>
+                          {project.hosting?.url && (
+                            <div>
+                              <h4 className="text-xs text-muted-foreground mb-1">URL</h4>
+                              <a 
+                                href={project.hosting.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline text-sm break-all"
+                              >
+                                {project.hosting.url}
+                              </a>
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
+                            <div className="font-mono text-sm bg-background p-2 rounded border">
+                              {project.hosting?.credentials?.username || "No username provided"}
+                            </div>
+                          </div>
+                          <div>
+                            <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
+                            <div className="font-mono text-sm bg-background p-2 rounded border">
+                              {project.hosting?.credentials?.password || "No password provided"}
+                            </div>
+                          </div>
+                          {project.hosting?.notes && (
+                            <div className="sm:col-span-2">
+                              <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
+                              <div className="text-sm">{project.hosting.notes}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {project.otherAccess && project.otherAccess.length > 0 && (
+                        <>
+                          <Separator />
+                          <div className="space-y-4">
+                            <h3 className="text-sm font-medium">Other Access</h3>
+                            {project.otherAccess.map((access) => (
+                              <div 
+                                key={access.id} 
+                                className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md"
+                              >
+                                <div className="sm:col-span-2 flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium">{access.name}</h4>
+                                    <span className="text-xs uppercase text-muted-foreground">{access.type}</span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
+                                  <div className="font-mono text-sm bg-background p-2 rounded border">
+                                    {access.credentials?.username || "No username provided"}
+                                  </div>
+                                </div>
+                                <div>
+                                  <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
+                                  <div className="font-mono text-sm bg-background p-2 rounded border">
+                                    {access.credentials?.password || "No password provided"}
+                                  </div>
+                                </div>
+                                {access.notes && (
+                                  <div className="sm:col-span-2">
+                                    <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
+                                    <div className="text-sm">{access.notes}</div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="col-span-1 space-y-6">
@@ -527,6 +576,39 @@ const ProjectDetails = () => {
                       {format(new Date(project.updatedAt), "MMM d, yyyy")}
                     </span>
                   </div>
+
+                  {project.payments && project.payments.length > 0 && (
+                    <>
+                      <Separator className="my-2" />
+                      <div className="pt-2">
+                        <h3 className="text-sm font-medium mb-3">Payment Summary</h3>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Total Payments</span>
+                            <span className="font-medium">{project.payments.length}</span>
+                          </div>
+                          
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Amount Paid</span>
+                            <span className="font-medium">
+                              ${project.payments.reduce((acc, payment) => 
+                                payment.status === 'completed' ? acc + Number(payment.amount) : acc, 0
+                              ).toLocaleString()}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Amount Pending</span>
+                            <span className="font-medium">
+                              ${project.payments.reduce((acc, payment) => 
+                                payment.status === 'pending' ? acc + Number(payment.amount) : acc, 0
+                              ).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>
