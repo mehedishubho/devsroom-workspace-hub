@@ -1,4 +1,2 @@
 
-import { Client } from "@/types";
-
-// No sample data, just export interface
+// Empty client data file - all data will be fetched from the backend

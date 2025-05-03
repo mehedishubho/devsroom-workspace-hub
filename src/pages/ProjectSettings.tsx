@@ -1,13 +1,28 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter, 
+  DialogDescription
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import PageTransition from "@/components/ui-custom/PageTransition";
 import EmptyState from "@/components/ui-custom/EmptyState";
-import { Loader2, Plus, PlusCircle, Save, Trash } from "lucide-react";
+import { Loader2, Plus, PlusCircle, Save, Trash, Edit } from "lucide-react";
 import Dashboard from "@/components/layout/Dashboard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
@@ -260,7 +275,7 @@ const ProjectSettings = () => {
 
   // Helper function to get categories for a type
   const getCategoriesForType = (typeId: string): ProjectCategory[] => {
-    return categories.filter(cat => cat.projectTypeId === typeId);
+    return projectCategories.filter(cat => cat.projectTypeId === typeId);
   };
 
   const renderTypesList = () => {
@@ -280,7 +295,7 @@ const ProjectSettings = () => {
           icon={<PlusCircle className="h-6 w-6 text-primary" />}
           action={{
             label: "Create Project Type",
-            onClick: openAddTypeDialog
+            onClick: handleAddType
           }}
         />
       );
@@ -345,7 +360,7 @@ const ProjectSettings = () => {
           icon={<PlusCircle className="h-6 w-6 text-primary" />}
           action={{
             label: "Create Category",
-            onClick: openAddCategoryDialog
+            onClick: handleAddCategory
           }}
         />
       );

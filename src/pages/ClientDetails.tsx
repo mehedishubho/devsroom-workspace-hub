@@ -3,8 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { 
   getClientById,
-  addClient,
-  updateClient 
+  updateClient,
+  deleteClient 
 } from "@/services/clientService";
 import Dashboard from "@/components/layout/Dashboard";
 import PageTransition from "@/components/ui-custom/PageTransition";

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -59,7 +58,7 @@ const Clients = () => {
 
   // Create client mutation
   const createClientMutation = useMutation({
-    mutationFn: createClient,
+    mutationFn: (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => createClient(clientData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       setIsAddDialogOpen(false);
