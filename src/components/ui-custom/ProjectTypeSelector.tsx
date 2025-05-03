@@ -56,9 +56,10 @@ const ProjectTypeSelector = ({
     const loadData = async () => {
       try {
         const types = await getProjectTypes();
-        setProjectTypes(types);
+        setProjectTypes(types || []);
       } catch (error) {
         console.error("Error loading project types:", error);
+        setProjectTypes([]);
       }
     };
     
@@ -71,19 +72,20 @@ const ProjectTypeSelector = ({
       if (selectedTypeId) {
         try {
           const typeCategories = await getCategoriesByType(selectedTypeId);
-          setCategories(typeCategories);
+          setCategories(typeCategories || []);
           
           // If the current category doesn't belong to the selected type
           // either select the first available or clear selection
-          const categoryBelongsToType = typeCategories.some(cat => cat.id === selectedCategoryId);
+          const categoryBelongsToType = (typeCategories || []).some(cat => cat && cat.id === selectedCategoryId);
           
-          if (!categoryBelongsToType && typeCategories.length > 0) {
+          if (!categoryBelongsToType && typeCategories && typeCategories.length > 0) {
             onCategoryChange(typeCategories[0].id);
           } else if (!categoryBelongsToType) {
             onCategoryChange("");
           }
         } catch (error) {
           console.error("Error loading categories:", error);
+          setCategories([]);
         }
       } else {
         setCategories([]);
@@ -111,14 +113,16 @@ const ProjectTypeSelector = ({
 
     try {
       const newType = await addProjectType(newTypeName);
-      setProjectTypes(prev => [...prev, newType]);
-      onTypeChange(newType.id);
-      setIsAddTypeOpen(false);
-      
-      toast({
-        title: "Success",
-        description: "New project type added"
-      });
+      if (newType) {
+        setProjectTypes(prev => [...prev, newType]);
+        onTypeChange(newType.id);
+        setIsAddTypeOpen(false);
+        
+        toast({
+          title: "Success",
+          description: "New project type added"
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -164,14 +168,16 @@ const ProjectTypeSelector = ({
 
     try {
       const newCategory = await addProjectCategory(newCategoryName, selectedTypeId);
-      setCategories(prev => [...prev, newCategory]);
-      onCategoryChange(newCategory.id);
-      setIsAddCategoryOpen(false);
-      
-      toast({
-        title: "Success",
-        description: "New category added"
-      });
+      if (newCategory) {
+        setCategories(prev => [...prev, newCategory]);
+        onCategoryChange(newCategory.id);
+        setIsAddCategoryOpen(false);
+        
+        toast({
+          title: "Success",
+          description: "New category added"
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -187,8 +193,10 @@ const ProjectTypeSelector = ({
     console.log("ProjectTypeSelector - Current selections:", { 
       selectedTypeId, 
       selectedCategoryId,
-      typeFound: projectTypes.some(t => t.id === selectedTypeId),
-      categoryFound: categories.some(c => c.id === selectedCategoryId)
+      typeFound: projectTypes.some(t => t && t.id === selectedTypeId),
+      categoryFound: categories.some(c => c && c.id === selectedCategoryId),
+      projectTypesLength: projectTypes.length,
+      categoriesLength: categories.length
     });
   }, [selectedTypeId, selectedCategoryId, projectTypes, categories]);
 
@@ -217,7 +225,7 @@ const ProjectTypeSelector = ({
             <SelectValue placeholder="Select project type" />
           </SelectTrigger>
           <SelectContent>
-            {projectTypes.map((type) => (
+            {(projectTypes || []).filter(Boolean).map((type) => (
               <SelectItem key={type.id} value={type.id}>
                 {type.name}
               </SelectItem>
@@ -251,7 +259,7 @@ const ProjectTypeSelector = ({
             <SelectValue placeholder={!selectedTypeId ? "Select type first" : "Select category"} />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((category) => (
+            {(categories || []).filter(Boolean).map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
               </SelectItem>
