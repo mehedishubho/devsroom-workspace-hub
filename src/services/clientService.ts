@@ -1,9 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/types";
-import { mapDbClientToClient } from "@/utils/dataMappers";
 import { toast } from "@/hooks/use-toast";
 
+// Get all clients
 export const getClients = async (): Promise<Client[]> => {
   try {
     const { data, error } = await supabase
@@ -13,8 +13,20 @@ export const getClients = async (): Promise<Client[]> => {
     
     if (error) throw error;
     
-    // Map database client records to Client type
-    return data.map(client => mapDbClientToClient(client));
+    return data.map(client => ({
+      id: client.id,
+      companyId: client.company_id || undefined,
+      name: client.name,
+      email: client.email,
+      phone: client.phone || undefined,
+      address: client.address || undefined,
+      city: client.city || undefined,
+      state: client.state || undefined,
+      zipCode: client.zip_code || undefined,
+      country: client.country || undefined,
+      createdAt: new Date(client.created_at),
+      updatedAt: client.updated_at ? new Date(client.updated_at) : undefined
+    }));
   } catch (error) {
     console.error('Error fetching clients:', error);
     toast({
@@ -26,56 +38,12 @@ export const getClients = async (): Promise<Client[]> => {
   }
 };
 
-export const getClientsByCompanyId = async (companyId: string): Promise<Client[]> => {
+// Add the updateClient function
+export const updateClient = async (clientData: Client): Promise<Client | null> => {
   try {
     const { data, error } = await supabase
       .from('clients')
-      .select('*')
-      .eq('company_id', companyId)
-      .order('name', { ascending: true });
-    
-    if (error) throw error;
-    
-    // Map database client records to Client type
-    return data.map(client => mapDbClientToClient(client));
-  } catch (error) {
-    console.error(`Error fetching clients for company ${companyId}:`, error);
-    toast({
-      title: "Error",
-      description: "Failed to fetch company clients. Please try again.",
-      variant: "destructive"
-    });
-    return [];
-  }
-};
-
-export const getClientById = async (id: string): Promise<Client | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) throw error;
-    
-    return mapDbClientToClient(data);
-  } catch (error) {
-    console.error(`Error fetching client with ID ${id}:`, error);
-    toast({
-      title: "Error",
-      description: "Failed to fetch client details. Please try again.",
-      variant: "destructive"
-    });
-    return null;
-  }
-};
-
-export const addClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('clients')
-      .insert({
+      .update({
         name: clientData.name,
         email: clientData.email,
         phone: clientData.phone,
@@ -84,24 +52,58 @@ export const addClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'u
         state: clientData.state,
         zip_code: clientData.zipCode,
         country: clientData.country,
-        company_id: clientData.companyId
+        company_id: clientData.companyId,
+        updated_at: new Date().toISOString()
       })
-      .select()
+      .eq('id', clientData.id)
+      .select('*')
       .single();
     
     if (error) throw error;
     
-    return mapDbClientToClient(data);
+    return {
+      id: data.id,
+      companyId: data.company_id || undefined,
+      name: data.name,
+      email: data.email,
+      phone: data.phone || undefined,
+      address: data.address || undefined,
+      city: data.city || undefined,
+      state: data.state || undefined,
+      zipCode: data.zip_code || undefined,
+      country: data.country || undefined,
+      createdAt: new Date(data.created_at),
+      updatedAt: data.updated_at ? new Date(data.updated_at) : undefined
+    };
   } catch (error) {
-    console.error('Error adding client:', error);
+    console.error('Error updating client:', error);
     toast({
       title: "Error",
-      description: "Failed to add client. Please try again.",
+      description: "Failed to update client. Please try again.",
       variant: "destructive"
     });
     return null;
   }
 };
 
-// Alias for addClient to maintain compatibility with existing code
-export const createClient = addClient;
+// Add any other missing client service functions here
+export const deleteClient = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting client:', error);
+    toast({
+      title: "Error",
+      description: "Failed to delete client. Please try again.",
+      variant: "destructive"
+    });
+    return false;
+  }
+};

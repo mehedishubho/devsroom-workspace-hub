@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectType, ProjectCategory } from "@/types";
 import { toast } from "@/hooks/use-toast";
@@ -30,6 +29,33 @@ export const getProjectTypes = async (): Promise<ProjectType[]> => {
       variant: "destructive"
     });
     return [];
+  }
+};
+
+/**
+ * Get a project type by ID
+ */
+export const getProjectTypeById = async (id: string): Promise<ProjectType | null> => {
+  if (!isValidUUID(id)) return null;
+  
+  try {
+    const { data, error } = await supabase
+      .from('project_types')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: new Date(data.created_at),
+      updatedAt: data.updated_at ? new Date(data.updated_at) : undefined
+    };
+  } catch (error) {
+    console.error('Error fetching project type by ID:', error);
+    return null;
   }
 };
 
@@ -198,7 +224,7 @@ export const getCategoriesByType = async (projectTypeId: string): Promise<Projec
 /**
  * Get all project categories
  */
-export const getAllProjectCategories = async (): Promise<ProjectCategory[]> => {
+export const getProjectCategories = async (): Promise<ProjectCategory[]> => {
   try {
     const { data, error } = await supabase
       .from('project_categories')

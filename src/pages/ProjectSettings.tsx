@@ -1,21 +1,18 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import Dashboard from "@/components/layout/Dashboard";
-import PageTransition from "@/components/ui-custom/PageTransition";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash, Edit, Plus, Save } from "lucide-react";
-import { ProjectType, ProjectCategory } from "@/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import PageTransition from "@/components/ui-custom/PageTransition";
+import EmptyState from "@/components/ui-custom/EmptyState";
+import { Loader2, Plus, PlusCircle, Save, Trash } from "lucide-react";
+import Dashboard from "@/components/layout/Dashboard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  getProjectTypes,
+import { 
+  getProjectTypes, 
   getProjectCategories,
-  getCategoriesByType,
   addProjectType,
   updateProjectType,
   deleteProjectType,
@@ -23,6 +20,7 @@ import {
   updateProjectCategory,
   deleteProjectCategory
 } from "@/services/projectTypeService";
+import { ProjectType, ProjectCategory } from "@/types";
 
 const ProjectSettings = () => {
   const { toast } = useToast();
@@ -40,12 +38,12 @@ const ProjectSettings = () => {
   const [selectedTypeId, setSelectedTypeId] = useState("");
 
   // Fetch types and categories using React Query
-  const { data: projectTypes = [] } = useQuery({
+  const { data: projectTypes = [], isLoading: isLoadingTypes } = useQuery({
     queryKey: ['projectTypes'],
     queryFn: getProjectTypes
   });
   
-  const { data: categories = [] } = useQuery({
+  const { data: projectCategories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ['projectCategories'],
     queryFn: getProjectCategories
   });
@@ -265,6 +263,140 @@ const ProjectSettings = () => {
     return categories.filter(cat => cat.projectTypeId === typeId);
   };
 
+  const renderTypesList = () => {
+    if (isLoadingTypes) {
+      return (
+        <div className="flex justify-center items-center p-8">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (!projectTypes || projectTypes.length === 0) {
+      return (
+        <EmptyState
+          title="No Project Types"
+          description="Create your first project type to organize your work"
+          icon={<PlusCircle className="h-6 w-6 text-primary" />}
+          action={{
+            label: "Create Project Type",
+            onClick: openAddTypeDialog
+          }}
+        />
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {(projectTypes as ProjectType[]).map(type => (
+          <Card key={type.id}>
+            <CardHeader className="pb-2">
+              <CardTitle>{type.name}</CardTitle>
+              <CardDescription>
+                Created: {new Date(type.createdAt).toLocaleDateString()}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {getCategoriesForType(type.id).length} categories
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => handleEditType(type)}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span className="sr-only">Edit</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDeleteType(type.id)}
+                  >
+                    <Trash className="h-4 w-4" />
+                    <span className="sr-only">Delete</span>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  const renderCategoriesList = () => {
+    if (isLoadingCategories) {
+      return (
+        <div className="flex justify-center items-center p-8">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (!projectCategories || (projectCategories as ProjectCategory[]).length === 0) {
+      return (
+        <EmptyState
+          title="No Categories"
+          description="Create your first category to classify your projects"
+          icon={<PlusCircle className="h-6 w-6 text-primary" />}
+          action={{
+            label: "Create Category",
+            onClick: openAddCategoryDialog
+          }}
+        />
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {(projectCategories as ProjectCategory[]).map(category => {
+          const parentType = projectTypes.find(t => t.id === category.projectTypeId);
+          
+          return (
+            <Card key={category.id}>
+              <CardHeader className="pb-2">
+                <CardTitle>{category.name}</CardTitle>
+                <CardDescription>
+                  Type: {parentType?.name || "Unknown"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Created: {new Date(category.createdAt).toLocaleDateString()}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={() => handleEditCategory(category)}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteCategory(category.id)}
+                    >
+                      <Trash className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <Dashboard>
       <PageTransition>
@@ -291,48 +423,7 @@ const ProjectSettings = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projectTypes.map((type) => (
-                  <Card key={type.id}>
-                    <CardHeader className="pb-2">
-                      <CardTitle>{type.name}</CardTitle>
-                      <CardDescription>
-                        Created: {new Date(type.createdAt).toLocaleDateString()}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between">
-                        <p className="text-sm text-muted-foreground">
-                          {getCategoriesForType(type.id).length} categories
-                        </p>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            onClick={() => handleEditType(type)}
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteType(type.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                
-                {projectTypes.length === 0 && (
-                  <div className="col-span-full text-center py-10 border border-dashed rounded-lg">
-                    <p className="text-muted-foreground">No project types yet. Add your first one!</p>
-                  </div>
-                )}
+                {renderTypesList()}
               </div>
             </TabsContent>
             
@@ -349,56 +440,7 @@ const ProjectSettings = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {categories.map((category) => {
-                  const parentType = projectTypes.find(t => t.id === category.projectTypeId);
-                  
-                  return (
-                    <Card key={category.id}>
-                      <CardHeader className="pb-2">
-                        <CardTitle>{category.name}</CardTitle>
-                        <CardDescription>
-                          Type: {parentType?.name || "Unknown"}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex justify-between">
-                          <p className="text-sm text-muted-foreground">
-                            Created: {new Date(category.createdAt).toLocaleDateString()}
-                          </p>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              onClick={() => handleEditCategory(category)}
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteCategory(category.id)}
-                            >
-                              <Trash className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-                
-                {categories.length === 0 && (
-                  <div className="col-span-full text-center py-10 border border-dashed rounded-lg">
-                    <p className="text-muted-foreground">
-                      {projectTypes.length === 0 
-                        ? "Please create a project type first" 
-                        : "No categories yet. Add your first one!"}
-                    </p>
-                  </div>
-                )}
+                {renderCategoriesList()}
               </div>
             </TabsContent>
           </Tabs>

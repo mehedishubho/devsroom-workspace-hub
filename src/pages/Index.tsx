@@ -11,7 +11,7 @@ import EmptyState from "@/components/ui-custom/EmptyState";
 import AddProjectButton from "@/components/ui-custom/AddProjectButton";
 import ProjectForm from "@/components/ProjectForm";
 import PageTransition from "@/components/ui-custom/PageTransition";
-import { Project } from "@/types";
+import { Project, ProjectCategory } from "@/types";
 import { getProjects, addProject as addProjectToDb } from "@/services/projectService";
 import { getProjectTypes, getProjectCategories } from "@/services/projectTypeService";
 import {
@@ -31,7 +31,7 @@ const Index = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const [availableCategories, setAvailableCategories] = useState<any[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<ProjectCategory[]>([]);
 
   const { 
     data: projects = [], 
@@ -82,8 +82,8 @@ const Index = () => {
   });
 
   useEffect(() => {
-    if (selectedType) {
-      const categories = projectCategories.filter(
+    if (selectedType && projectCategories) {
+      const categories = (projectCategories as ProjectCategory[]).filter(
         category => category.projectTypeId === selectedType
       );
       setAvailableCategories(categories);
@@ -95,7 +95,7 @@ const Index = () => {
         }
       }
     } else {
-      setAvailableCategories(projectCategories);
+      setAvailableCategories(projectCategories as ProjectCategory[] || []);
     }
   }, [selectedType, selectedCategory, projectCategories]);
 
