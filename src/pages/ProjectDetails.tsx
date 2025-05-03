@@ -2,21 +2,20 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import Dashboard from "@/components/layout/Dashboard";
 import ProjectForm from "@/components/ProjectForm";
-import { Button } from "@/components/ui/button";
-import { Pencil, ArrowLeft, Calendar, DollarSign, Tag, FileText } from "lucide-react";
 import PageTransition from "@/components/ui-custom/PageTransition";
 import { Project, ensureValidStatus } from "@/types";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import PaymentItemWithCurrency from "@/components/ui-custom/PaymentItemWithCurrency";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { updateProject } from "@/services/projects";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProjectHeader from "@/components/project-details/ProjectHeader";
+import ProjectStatusCard from "@/components/project-details/ProjectStatusCard";
+import ProjectOverviewTab from "@/components/project-details/ProjectOverviewTab";
+import ProjectPaymentsTab from "@/components/project-details/ProjectPaymentsTab";
+import ProjectCredentialsTab from "@/components/project-details/ProjectCredentialsTab";
+import { getDisplayStatus, getStatusColor } from "@/components/project-details/utils";
 
 const ProjectDetails = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -26,31 +25,6 @@ const ProjectDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
-      case 'on-hold':
-        return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
-      case 'in-progress':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
-    }
-  };
-
-  const getDisplayStatus = (status: string, originalStatus?: string) => {
-    if (status === 'active' && originalStatus === 'in-progress') {
-      return 'In Progress';
-    }
-    
-    return status.charAt(0).toUpperCase() + status.slice(1).replace(/-/g, ' ');
-  };
 
   useEffect(() => {
     const fetchProjectDetails = async () => {
@@ -268,25 +242,12 @@ const ProjectDetails = () => {
     <Dashboard>
       <PageTransition>
         <div className="space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                onClick={handleBack} 
-                size="icon" 
-                className="h-8 w-8"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
-                <p className="text-muted-foreground">Client: {project.clientName}</p>
-              </div>
-            </div>
-            <Button onClick={handleEdit} className="gap-2">
-              <Pencil className="h-4 w-4" /> Edit Project
-            </Button>
-          </div>
+          <ProjectHeader 
+            name={project.name}
+            clientName={project.clientName}
+            onBack={handleBack}
+            onEdit={handleEdit}
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="col-span-1 lg:col-span-3 space-y-6">
@@ -298,319 +259,25 @@ const ProjectDetails = () => {
                 </TabsList>
                 
                 <TabsContent value="overview" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Project Overview</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground mb-1">Project Name</h3>
-                          <p className="font-semibold">{project.name}</p>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground mb-1">Client</h3>
-                          <p>{project.clientName}</p>
-                        </div>
-
-                        {project.projectType && (
-                          <div>
-                            <h3 className="text-sm font-medium text-muted-foreground mb-1">Project Type</h3>
-                            <p>{project.projectType}</p>
-                          </div>
-                        )}
-                        
-                        {project.projectCategory && (
-                          <div>
-                            <h3 className="text-sm font-medium text-muted-foreground mb-1">Category</h3>
-                            <p>{project.projectCategory}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <Separator className="my-2" />
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
-                        <p>{project.description || "No description provided."}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Project URL</h3>
-                        {project.url ? (
-                          <a 
-                            href={project.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline break-all"
-                          >
-                            {project.url}
-                          </a>
-                        ) : (
-                          <p className="text-muted-foreground italic">No URL provided.</p>
-                        )}
-                      </div>
-
-                      {project.notes && (
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground mb-1">Notes</h3>
-                          <p>{project.notes}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <ProjectOverviewTab project={project} />
                 </TabsContent>
 
                 <TabsContent value="payments" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Payments</CardTitle>
-                      <CardDescription>Payment history and schedule</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {!project.payments || project.payments.length === 0 ? (
-                        <div className="text-center py-6">
-                          <p className="text-muted-foreground">No payments added yet</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {project.payments.map((payment, index) => (
-                            <PaymentItemWithCurrency 
-                              key={payment.id || index} 
-                              payment={payment}
-                              onUpdate={() => {}} 
-                              onDelete={() => {}}
-                              editable={false}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <ProjectPaymentsTab payments={project.payments} />
                 </TabsContent>
 
                 <TabsContent value="credentials" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Access & Credentials</CardTitle>
-                      <CardDescription>Project access information</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Project Credentials</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md">
-                          <div>
-                            <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
-                            <div className="font-mono text-sm bg-background p-2 rounded border">
-                              {project.credentials?.username || "No username provided"}
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
-                            <div className="font-mono text-sm bg-background p-2 rounded border">
-                              {project.credentials?.password || "No password provided"}
-                            </div>
-                          </div>
-                          {project.credentials?.notes && (
-                            <div className="sm:col-span-2">
-                              <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
-                              <div className="text-sm">{project.credentials.notes}</div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Hosting Information</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md">
-                          <div>
-                            <h4 className="text-xs text-muted-foreground mb-1">Provider</h4>
-                            <div className="text-sm">{project.hosting?.provider || "No provider specified"}</div>
-                          </div>
-                          {project.hosting?.url && (
-                            <div>
-                              <h4 className="text-xs text-muted-foreground mb-1">URL</h4>
-                              <a 
-                                href={project.hosting.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline text-sm break-all"
-                              >
-                                {project.hosting.url}
-                              </a>
-                            </div>
-                          )}
-                          <div>
-                            <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
-                            <div className="font-mono text-sm bg-background p-2 rounded border">
-                              {project.hosting?.credentials?.username || "No username provided"}
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
-                            <div className="font-mono text-sm bg-background p-2 rounded border">
-                              {project.hosting?.credentials?.password || "No password provided"}
-                            </div>
-                          </div>
-                          {project.hosting?.notes && (
-                            <div className="sm:col-span-2">
-                              <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
-                              <div className="text-sm">{project.hosting.notes}</div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {project.otherAccess && project.otherAccess.length > 0 && (
-                        <>
-                          <Separator />
-                          <div className="space-y-4">
-                            <h3 className="text-sm font-medium">Other Access</h3>
-                            {project.otherAccess.map((access) => (
-                              <div 
-                                key={access.id} 
-                                className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-md"
-                              >
-                                <div className="sm:col-span-2 flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-medium">{access.name}</h4>
-                                    <span className="text-xs uppercase text-muted-foreground">{access.type}</span>
-                                  </div>
-                                </div>
-                                <div>
-                                  <h4 className="text-xs text-muted-foreground mb-1">Username</h4>
-                                  <div className="font-mono text-sm bg-background p-2 rounded border">
-                                    {access.credentials?.username || "No username provided"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <h4 className="text-xs text-muted-foreground mb-1">Password</h4>
-                                  <div className="font-mono text-sm bg-background p-2 rounded border">
-                                    {access.credentials?.password || "No password provided"}
-                                  </div>
-                                </div>
-                                {access.notes && (
-                                  <div className="sm:col-span-2">
-                                    <h4 className="text-xs text-muted-foreground mb-1">Notes</h4>
-                                    <div className="text-sm">{access.notes}</div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <ProjectCredentialsTab project={project} />
                 </TabsContent>
               </Tabs>
             </div>
 
             <div className="col-span-1 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Project Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="text-sm">Start Date</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {format(new Date(project.startDate), "MMM d, yyyy")}
-                    </span>
-                  </div>
-                  
-                  {project.endDate && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="text-sm">End Date</span>
-                      </div>
-                      <span className="text-sm font-medium">
-                        {format(new Date(project.endDate), "MMM d, yyyy")}
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="text-sm">Project Price</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      ${project.price ? project.price.toLocaleString() : '0'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="text-sm">Status</span>
-                    </div>
-                    <Badge className={getStatusColor(project.status)}>
-                      {getDisplayStatus(project.status, project.originalStatus)}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="text-sm">Created</span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {format(new Date(project.createdAt), "MMM d, yyyy")}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="text-sm">Updated</span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {format(new Date(project.updatedAt), "MMM d, yyyy")}
-                    </span>
-                  </div>
-
-                  {project.payments && project.payments.length > 0 && (
-                    <>
-                      <Separator className="my-2" />
-                      <div className="pt-2">
-                        <h3 className="text-sm font-medium mb-3">Payment Summary</h3>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Total Payments</span>
-                            <span className="font-medium">{project.payments.length}</span>
-                          </div>
-                          
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Amount Paid</span>
-                            <span className="font-medium">
-                              ${project.payments.reduce((acc, payment) => 
-                                payment.status === 'completed' ? acc + Number(payment.amount) : acc, 0
-                              ).toLocaleString()}
-                            </span>
-                          </div>
-                          
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Amount Pending</span>
-                            <span className="font-medium">
-                              ${project.payments.reduce((acc, payment) => 
-                                payment.status === 'pending' ? acc + Number(payment.amount) : acc, 0
-                              ).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+              <ProjectStatusCard 
+                project={project} 
+                getStatusColor={getStatusColor}
+                getDisplayStatus={getDisplayStatus}
+              />
             </div>
           </div>
         </div>
@@ -618,7 +285,6 @@ const ProjectDetails = () => {
         <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
           <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogTitle>Edit Project</DialogTitle>
-            <DialogDescription>Make changes to the project information</DialogDescription>
             <div className="py-4">
               <ProjectForm 
                 initialData={project} 
