@@ -7,7 +7,7 @@ export const isValidUUID = (str: string | null | undefined): boolean => {
   
   // If it's a sample data ID (starting with 'type-' or 'cat-'), return true
   if (str.startsWith('type-') || str.startsWith('cat-')) {
-    return true;
+    return true;  // Consider sample data IDs as valid
   }
   
   // Regular UUID validation (standard UUID v4 format)

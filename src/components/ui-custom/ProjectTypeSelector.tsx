@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Select, 
@@ -19,13 +20,13 @@ import { Input } from "@/components/ui/input";
 import { Plus, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
+  getProjectTypes, 
+  getProjectCategories,
   getProjectTypeById, 
-  getCategoriesByTypeId, 
+  getCategoriesByType, 
   addProjectType, 
-  addProjectCategory,
-  sampleProjectTypes,
-  sampleProjectCategories 
-} from "@/data/projectTypes";
+  addProjectCategory
+} from "@/services/projectTypeService";
 import { ProjectType, ProjectCategory } from "@/types";
 
 interface ProjectTypeSelectorProps {
@@ -49,33 +50,48 @@ const ProjectTypeSelector = ({
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newTypeName, setNewTypeName] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
-
+  
+  // Load project types on initial render
   useEffect(() => {
-    import("@/data/projectTypes").then(({ sampleProjectTypes }) => {
-      setProjectTypes([...sampleProjectTypes]);
-      
-      if (selectedTypeId) {
-        const typeCategories = getCategoriesByTypeId(selectedTypeId);
-        setCategories(typeCategories);
+    const loadData = async () => {
+      try {
+        const types = await getProjectTypes();
+        setProjectTypes(types);
+      } catch (error) {
+        console.error("Error loading project types:", error);
       }
-    });
-  }, [selectedTypeId]);
-
+    };
+    
+    loadData();
+  }, []);
+  
+  // Update categories when selected type changes
   useEffect(() => {
-    if (selectedTypeId) {
-      const typeCategories = getCategoriesByTypeId(selectedTypeId);
-      setCategories(typeCategories);
-      
-      const categoryBelongsToType = typeCategories.some(cat => cat.id === selectedCategoryId);
-      if (!categoryBelongsToType && typeCategories.length > 0) {
-        onCategoryChange(typeCategories[0].id);
-      } else if (!categoryBelongsToType) {
+    const loadCategories = async () => {
+      if (selectedTypeId) {
+        try {
+          const typeCategories = await getCategoriesByType(selectedTypeId);
+          setCategories(typeCategories);
+          
+          // If the current category doesn't belong to the selected type
+          // either select the first available or clear selection
+          const categoryBelongsToType = typeCategories.some(cat => cat.id === selectedCategoryId);
+          
+          if (!categoryBelongsToType && typeCategories.length > 0) {
+            onCategoryChange(typeCategories[0].id);
+          } else if (!categoryBelongsToType) {
+            onCategoryChange("");
+          }
+        } catch (error) {
+          console.error("Error loading categories:", error);
+        }
+      } else {
+        setCategories([]);
         onCategoryChange("");
       }
-    } else {
-      setCategories([]);
-      onCategoryChange("");
-    }
+    };
+    
+    loadCategories();
   }, [selectedTypeId, selectedCategoryId, onCategoryChange]);
 
   const handleAddType = () => {
@@ -83,7 +99,7 @@ const ProjectTypeSelector = ({
     setIsAddTypeOpen(true);
   };
 
-  const handleSaveNewType = () => {
+  const handleSaveNewType = async () => {
     if (!newTypeName.trim()) {
       toast({
         title: "Error",
@@ -93,15 +109,24 @@ const ProjectTypeSelector = ({
       return;
     }
 
-    const newType = addProjectType(newTypeName);
-    setProjectTypes(prev => [...prev, newType]);
-    onTypeChange(newType.id);
-    setIsAddTypeOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "New project type added"
-    });
+    try {
+      const newType = await addProjectType(newTypeName);
+      setProjectTypes(prev => [...prev, newType]);
+      onTypeChange(newType.id);
+      setIsAddTypeOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "New project type added"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add new project type",
+        variant: "destructive"
+      });
+      console.error("Error adding project type:", error);
+    }
   };
 
   const handleAddCategory = () => {
@@ -118,7 +143,7 @@ const ProjectTypeSelector = ({
     setIsAddCategoryOpen(true);
   };
 
-  const handleSaveNewCategory = () => {
+  const handleSaveNewCategory = async () => {
     if (!newCategoryName.trim()) {
       toast({
         title: "Error",
@@ -137,17 +162,27 @@ const ProjectTypeSelector = ({
       return;
     }
 
-    const newCategory = addProjectCategory(newCategoryName, selectedTypeId);
-    setCategories(prev => [...prev, newCategory]);
-    onCategoryChange(newCategory.id);
-    setIsAddCategoryOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "New category added"
-    });
+    try {
+      const newCategory = await addProjectCategory(newCategoryName, selectedTypeId);
+      setCategories(prev => [...prev, newCategory]);
+      onCategoryChange(newCategory.id);
+      setIsAddCategoryOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "New category added"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add new category",
+        variant: "destructive"
+      });
+      console.error("Error adding category:", error);
+    }
   };
 
+  // For debugging
   useEffect(() => {
     console.log("ProjectTypeSelector - Current selections:", { 
       selectedTypeId, 
@@ -225,6 +260,7 @@ const ProjectTypeSelector = ({
         </Select>
       </div>
 
+      {/* Fix accessibility issues in dialogs */}
       <Dialog open={isAddTypeOpen} onOpenChange={setIsAddTypeOpen}>
         <DialogContent>
           <DialogHeader>
@@ -268,7 +304,7 @@ const ProjectTypeSelector = ({
           <DialogHeader>
             <DialogTitle>Add New Category</DialogTitle>
             <DialogDescription>
-              Create a new category for project type: {getProjectTypeById(selectedTypeId)?.name}
+              Create a new category for the selected project type
             </DialogDescription>
           </DialogHeader>
           
