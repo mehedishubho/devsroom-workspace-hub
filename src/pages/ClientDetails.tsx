@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  getClientById, 
-  getProjectsByClientId, 
-  updateClient, 
-  deleteClient 
-} from "@/data/clients";
+  getClientById,
+  addClient,
+  updateClient 
+} from "@/services/clientService";
 import Dashboard from "@/components/layout/Dashboard";
 import PageTransition from "@/components/ui-custom/PageTransition";
 import ProjectCard from "@/components/ui-custom/ProjectCard";
@@ -137,16 +136,47 @@ const ClientDetails = () => {
             setProjects([]);
           }
         } else {
-          // Fallback to local data if not found in Supabase
-          const fetchedClient = getClientById(clientId);
-          if (fetchedClient) {
-            setClient(fetchedClient);
-            setName(fetchedClient.name);
-            setEmail(fetchedClient.email);
-            setPhone(fetchedClient.phone || "");
+          // If client not found in Supabase
+          const clientFromService = await getClientById(clientId);
+          if (clientFromService) {
+            setClient(clientFromService);
+            setName(clientFromService.name);
+            setEmail(clientFromService.email);
+            setPhone(clientFromService.phone || "");
             
-            const clientProjects = getProjectsByClientId(clientId);
-            setProjects(clientProjects);
+            // For projects, fetch from Supabase
+            const { data: projectsData } = await supabase
+              .from('projects')
+              .select('*')
+              .eq('client_id', clientId);
+            
+            if (projectsData && projectsData.length > 0) {
+              const formattedProjects = projectsData.map(project => ({
+                id: project.id,
+                name: project.name,
+                clientId: project.client_id,
+                clientName: clientFromService.name,
+                description: project.description || "",
+                url: "",
+                credentials: { username: "", password: "" },
+                hosting: { provider: "", credentials: { username: "", password: "" } },
+                otherAccess: [],
+                startDate: new Date(project.start_date),
+                endDate: project.deadline_date ? new Date(project.deadline_date) : undefined,
+                price: project.budget || 0,
+                payments: [],
+                status: project.status as 'active' | 'completed' | 'on-hold' | 'cancelled' | 'under-revision',
+                projectTypeId: project.project_type_id,
+                projectCategoryId: project.project_category_id,
+                notes: project.description,
+                createdAt: new Date(project.created_at),
+                updatedAt: new Date(project.updated_at)
+              }));
+              
+              setProjects(formattedProjects);
+            } else {
+              setProjects([]);
+            }
           } else {
             toast({
               title: "Client not found",
@@ -238,15 +268,15 @@ const ClientDetails = () => {
           description: "Client information has been saved successfully"
         });
       } else {
-        // Fallback to local update
-        const localUpdatedClient = updateClient(clientId, {
+        // Fallback to service update
+        const updatedClientData = await updateClient(clientId, {
           name,
           email,
           phone
         });
         
-        if (localUpdatedClient) {
-          setClient(localUpdatedClient);
+        if (updatedClientData) {
+          setClient(updatedClientData);
           setIsEditDialogOpen(false);
           
           toast({
@@ -291,23 +321,12 @@ const ClientDetails = () => {
     } catch (error) {
       console.error("Error deleting client:", error);
       
-      // Fallback to local delete
-      const success = deleteClient(clientId);
-      
-      if (success) {
-        toast({
-          title: "Client deleted",
-          description: "The client has been removed successfully"
-        });
-        navigate("/clients");
-      } else {
-        toast({
-          title: "Error",
-          description: "Could not delete the client",
-          variant: "destructive"
-        });
-        setIsDeleteDialogOpen(false);
-      }
+      toast({
+        title: "Error",
+        description: "Could not delete the client",
+        variant: "destructive"
+      });
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -354,7 +373,7 @@ const ClientDetails = () => {
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <h1 className="text-3xl font-bold tracking-tight">{client.name}</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{client?.name}</h1>
             </div>
             <div className="flex gap-2">
               <Button 
@@ -383,10 +402,10 @@ const ClientDetails = () => {
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span>{client.email}</span>
+                    <span>{client?.email}</span>
                   </div>
                   
-                  {client.phone && (
+                  {client?.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       <span>{client.phone}</span>
@@ -396,7 +415,7 @@ const ClientDetails = () => {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Client since {new Date(client.createdAt).toLocaleDateString()}
+                      Client since {client?.createdAt ? new Date(client.createdAt).toLocaleDateString() : '-'}
                     </span>
                   </div>
                 </CardContent>
@@ -408,7 +427,7 @@ const ClientDetails = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Client Projects</h2>
                   <Button 
-                    onClick={() => navigate("/projects/new", { state: { clientId: client.id } })}
+                    onClick={() => navigate("/projects/new", { state: { clientId: client?.id } })}
                     size="sm"
                   >
                     Add Project
@@ -430,7 +449,7 @@ const ClientDetails = () => {
                       No projects found for this client
                     </p>
                     <Button 
-                      onClick={() => navigate("/projects/new", { state: { clientId: client.id } })}
+                      onClick={() => navigate("/projects/new", { state: { clientId: client?.id } })}
                     >
                       Create First Project
                     </Button>
