@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -32,9 +33,6 @@ const accountFormSchema = z.object({
 });
 
 const passwordFormSchema = z.object({
-  currentPassword: z.string().min(6, {
-    message: "Current password must be at least 6 characters.",
-  }),
   newPassword: z.string().min(6, {
     message: "New password must be at least 6 characters.",
   }),
@@ -66,7 +64,6 @@ const AccountSettings = () => {
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),
     defaultValues: {
-      currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
@@ -76,19 +73,45 @@ const AccountSettings = () => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would make an API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log("Updating user profile with:", values);
       
+      // Update email if it has changed
+      if (values.email !== user?.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: values.email
+        });
+        
+        if (emailError) {
+          throw emailError;
+        }
+        
+        toast({
+          title: "Email update initiated",
+          description: "Please check your new email address for a confirmation link",
+        });
+      }
+      
+      // Update user metadata (name)
+      const { error: metadataError } = await supabase.auth.updateUser({
+        data: { name: values.name }
+      });
+      
+      if (metadataError) {
+        throw metadataError;
+      }
+      
+      // Update local auth context
       updateUserProfile({ name: values.name, email: values.email });
       
       toast({
         title: "Account updated",
         description: "Your account information has been updated successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error updating account:", error);
       toast({
         title: "Error",
-        description: "Failed to update account information",
+        description: error.message || "Failed to update account information",
         variant: "destructive",
       });
     } finally {
@@ -100,12 +123,14 @@ const AccountSettings = () => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would make an API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log("Updating user password");
       
-      // Simple validation for demo purposes
-      if (values.currentPassword !== "admin123") {
-        throw new Error("Current password is incorrect");
+      const { error } = await supabase.auth.updateUser({
+        password: values.newPassword
+      });
+      
+      if (error) {
+        throw error;
       }
       
       toast({
@@ -114,14 +139,14 @@ const AccountSettings = () => {
       });
       
       passwordForm.reset({
-        currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error updating password:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update password",
+        description: error.message || "Failed to update password",
         variant: "destructive",
       });
     } finally {
@@ -226,20 +251,6 @@ const AccountSettings = () => {
                     onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} 
                     className="space-y-4"
                   >
-                    <FormField
-                      control={passwordForm.control}
-                      name="currentPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Current Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Separator className="my-4" />
                     <FormField
                       control={passwordForm.control}
                       name="newPassword"
